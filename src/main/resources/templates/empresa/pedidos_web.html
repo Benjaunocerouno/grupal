@@ -121,9 +121,12 @@
                                 title="Revisar y Facturar">
                                 <i class="fas fa-file-signature"></i> Atender
                             </a>
-                            
-                            <a href="#" class="btn btn-sm" style="background: #fee2e2; color: #dc2626;">
-                                <i class="fas fa-times"></i>
+                                <a th:href="@{/admin/pedidos-web/rechazar/{id}(id=${p.idpedido})}" 
+                                class="btn btn-sm" 
+                                style="background: #fee2e2; color: #dc2626;"
+                                onclick="return confirm('¿Estás seguro de RECHAZAR este pedido? Esta acción no se puede deshacer.');"
+                                title="Rechazar Pedido">
+                                    <i class="fas fa-times"></i>
                             </a>
                         </td>
                     </tr>

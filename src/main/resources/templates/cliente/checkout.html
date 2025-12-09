@@ -42,10 +42,37 @@
         <div class="card-box">
             <h2 style="margin-bottom: 20px; color: #333;">Datos de Envío</h2>
             <form id="formCheckout">
+                <h3 style="margin-top:0; color:#333;">Datos de Facturación</h3>
+
+                <div class="form-group">
+                    <label>Tipo de Documento</label>
+                    <select id="idTipoDoc" onchange="toggleRazonSocial()">
+                        <option value="">Seleccione...</option>
+                        
+                        <option th:each="td : ${tiposDoc}" 
+                                th:value="${td.idTipoDocumento}" 
+                                th:text="${td.nombre}"
+                                th:data-tipo="${td.abreviatura}"> 
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Documento</label>
+                    <input type="text" id="numDoc" required placeholder="DNI o RUC">
+                </div>
+
+                <div class="form-group" id="divRazonSocial" style="display: none;">
+                    <label>Razón Social</label>
+                    <input type="text" id="razonSocial" placeholder="Nombre de la empresa">
+                </div>
+                
+                <h3 style="margin-top:20px; color:#333;">Datos de Envío</h3>
                 <div class="form-group">
                     <label>Dirección de Entrega</label>
                     <input type="text" id="direccion" required placeholder="Av. Principal 123">
                 </div>
+
                 <div class="form-group">
                     <label>Ciudad</label>
                     <input type="text" id="ciudad" required placeholder="Lima">
@@ -106,5 +133,36 @@
     </script>
 
     <script th:src="@{/js/script.js}"></script>
+
+    <script>
+    function toggleRazonSocial() {
+        const select = document.getElementById('idTipoDoc');
+        const divRazon = document.getElementById('divRazonSocial');
+        const inputRazon = document.getElementById('razonSocial');
+        
+        // Verificamos que haya una selección válida
+        if (select.selectedIndex <= 0) {
+            divRazon.style.display = 'none';
+            return;
+        }
+
+        // Obtener la opción seleccionada
+        const option = select.options[select.selectedIndex];
+        
+        // Extraer la abreviatura del atributo data-tipo (ej: "RUC", "DNI")
+        // Usamos || '' por si acaso venga nulo
+        const tipo = (option.getAttribute('data-tipo') || '').toUpperCase();
+        
+        console.log("Tipo seleccionado:", tipo); // Para depurar si necesitas
+
+        // Lógica exacta: Si la abreviatura es RUC, mostramos el campo
+        if (tipo === 'RUC') {
+            divRazon.style.display = 'block';
+        } else {
+            divRazon.style.display = 'none';
+            inputRazon.value = ''; // Limpiar el campo si lo ocultan
+        }
+    }
+    </script>
 </body>
 </html>

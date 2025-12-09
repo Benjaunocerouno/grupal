@@ -362,3 +362,70 @@ function limpiarFormProveedor() {
     document.getElementById('form-title').innerText = "Registrar Nuevo Proveedor";
     document.getElementById('form-title').style.color = "#475569";
 }
+
+async function procesarCompraFinal() {
+    // 1. Obtener nuevos valores
+    const idTipoDoc = document.getElementById('idTipoDoc').value;
+    const numDoc = document.getElementById('numDoc').value;
+    const razonSocial = document.getElementById('razonSocial').value;
+    
+    // Obtener valores existentes
+    const direccion = document.getElementById('direccion').value;
+    const ciudad = document.getElementById('ciudad').value;
+    const referencia = document.getElementById('referencia').value;
+    const telefono = document.getElementById('telefono').value;
+    const tipoPago = document.getElementById('tipoPago').value;
+
+    // Validación básica
+    if (!idTipoDoc || !numDoc || !direccion || !telefono) {
+        alert("Por favor completa los datos de facturación y envío.");
+        return;
+    }
+
+    const payload = {
+        carrito: carrito.map(item => ({
+            idproducto: item.id,
+            cantidad: item.cantidad,
+            precio: item.precio
+        })),
+        // Agregar nuevos datos al payload
+        idTipoDoc: idTipoDoc,
+        numDoc: numDoc,
+        razonSocial: razonSocial,
+        
+        direccion,
+        ciudad,
+        referencia,
+        telefono,
+        tipoPago
+    };
+
+    // ... (El resto de la función se mantiene igual: fetch, manejo de respuesta, etc.) ...
+    const btn = document.querySelector('button[onclick="procesarCompraFinal()"]');
+    if (btn) { btn.disabled = true; btn.innerText = "Procesando..."; }
+
+    try {
+        const response = await fetch('/pedidos/guardar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        // ... resto del código igual ...
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            alert("✅ " + data.message);
+            vaciarCarrito();
+            window.location.href = "/";
+        } else {
+            alert("❌ Error: " + data.message);
+            if (btn) { btn.disabled = false; btn.innerText = "Confirmar Compra"; }
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert("Error de conexión");
+        if (btn) { btn.disabled = false; btn.innerText = "Confirmar Compra"; }
+    }
+}
