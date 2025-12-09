@@ -12,7 +12,7 @@
     
     <style>
         .auth-wrapper {
-            min-height: 90vh; /* Un poco más alto para registro */
+            min-height: 90vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -21,7 +21,7 @@
 
         .auth-box { 
             width: 100%;
-            max-width: 500px; /* Más ancho para que quepa bien el formulario */
+            max-width: 500px;
             background: white;
             padding: 40px; 
             border-radius: 12px; 
@@ -30,37 +30,28 @@
         }
 
         .auth-box h2 { margin-bottom: 25px; color: #1e293b; font-size: 1.8rem; }
-        
         .alert-error { background:#fee2e2; color:#991b1b; padding:12px; margin-bottom:20px; border-radius:6px; text-align:center; font-size: 0.9rem; border: 1px solid #fca5a5;}
         
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #475569; }
-        input { width:100%; padding:12px; margin-bottom: 20px; border:1px solid #cbd5e1; border-radius:6px; font-size: 1rem; transition: border 0.3s; }
-        input:focus { border-color: #2563eb; outline: none; }
+        input, select { width:100%; padding:12px; margin-bottom: 20px; border:1px solid #cbd5e1; border-radius:6px; font-size: 1rem; transition: border 0.3s; }
+        input:focus, select:focus { border-color: #2563eb; outline: none; }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="logo">
-            <a th:href="@{/}">Tech<span>Solutions</span></a>
-        </div>
-        
-        <div class="nav-menu" id="navMenu">
+        <div class="logo"><a th:href="@{/}">Tech<span>Solutions</span></a></div>
+        <div class="nav-menu">
             <ul class="nav-links">
                 <li><a th:href="@{/}">Inicio</a></li>
                 <li><a th:href="@{/tienda}">Tienda</a></li>
-                <li><a th:href="@{/servicio}">Servicios</a></li>
                 <li><a th:href="@{/contacto}">Contacto</a></li>
             </ul>
-
-            <div class="auth-buttons">
-                <a th:href="@{/login}" class="btn btn-outline">Iniciar Sesión</a>
-            </div>
+            <div class="auth-buttons"><a th:href="@{/login}" class="btn btn-outline">Iniciar Sesión</a></div>
         </div>
-
-        <div class="burger" id="burgerBtn">
-            <i class="fas fa-bars"></i>
-        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
     </nav>
 
     <div class="auth-wrapper">
@@ -72,60 +63,69 @@
             </div>
 
             <form th:action="@{/registro}" method="post">
-                <div>
-                    <label>Nombres Completos</label>
-                    <input type="text" name="nombres" required placeholder="Ej: Juan Pérez">
+                
+                <div class="form-row">
+                    <div>
+                        <label>Tipo Doc.</label>
+                        <select name="idTipoDoc" required>
+                            <option th:each="td : ${tiposDoc}" 
+                                    th:value="${td.idTipoDocumento}" 
+                                    th:text="${td.abreviatura != null ? td.abreviatura : td.nombre}">
+                            </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Número Doc.</label>
+                        <input type="text" name="numDoc" required placeholder="DNI o RUC">
+                    </div>
                 </div>
 
                 <div>
-                    <label>Nombre de Usuario</label>
-                    <input type="text" name="username" required placeholder="juanperez99">
+                    <label>Nombres / Razón Social</label>
+                    <input type="text" name="nombres" required placeholder="Juan Pérez o Empresa SAC">
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label>Usuario</label>
+                        <input type="text" name="username" required placeholder="juanp99">
+                    </div>
+                    <div>
+                        <label>Teléfono</label>
+                        <input type="text" name="telefono" required placeholder="999...">
+                    </div>
                 </div>
                 
                 <div>
                     <label>Correo Electrónico</label>
                     <input type="email" name="email" required placeholder="juan@correo.com">
                 </div>
-
-                <div>
-                    <label>Teléfono / Celular</label>
-                    <input type="text" name="telefono" required placeholder="999 999 999">
-                </div>
                 
                 <div>
                     <label>Contraseña</label>
-                    <input type="password" name="password" required placeholder="Crea una contraseña segura">
+                    <input type="password" name="password" required placeholder="••••••••">
                 </div>
 
-                <div class="input-group">
-                <label>Selecciona la Tienda:</label>
-                <select name="idEmpresa" required class="form-control">
-                    <option value="" disabled selected>-- Elige una tienda --</option>
-                    <option th:each="emp : ${empresas}" 
-                            th:value="${emp.idempresa}" 
-                            th:text="${emp.nombre}">
-                    </option>
-                </select>
-            </div>
+                <div>
+                    <label>Tienda:</label>
+                    <select name="idEmpresa" required>
+                        <option value="" disabled selected>-- Elige una tienda --</option>
+                        <option th:each="emp : ${empresas}" 
+                                th:value="${emp.idempresa}" 
+                                th:text="${emp.nombre}">
+                        </option>
+                    </select>
+                </div>
                 
-                <button type="submit" class="btn btn-filled" style="width:100%; margin-top: 10px; font-size: 1rem;">
-                    Registrarse
-                </button>
+                <button type="submit" class="btn btn-filled" style="width:100%; margin-top: 10px;">Registrarse</button>
             </form>
             
             <p style="text-align:center; margin-top:25px; font-size: 0.95rem; color: #64748b;">
-                ¿Ya tienes una cuenta? <br>
+                ¿Ya tienes cuenta? <br>
                 <a th:href="@{/login}" style="color: var(--primary-blue); font-weight: bold; text-decoration: none;">Inicia sesión aquí</a>
             </p>
         </div>
     </div>
-
-    <footer>
-        <div class="copyright">
-            <p>&copy; 2025 TechSolutions. Todos los derechos reservados.</p>
-        </div>
-    </footer>
-    
 
     <script th:src="@{/js/script.js}"></script>
 </body>
