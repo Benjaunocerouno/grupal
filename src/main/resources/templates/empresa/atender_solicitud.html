@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Atender Solicitud | TechAdmin</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .page-wrapper { padding: 40px 5%; max-width: 900px; margin: 0 auto; }
+        .card-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .grid-info { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 20px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar"> <div class="logo">TechAdmin</div> </nav>
+
+    <div class="page-wrapper">
+        <h2 style="margin-bottom: 20px;">Atender Solicitud #<span th:text="${solicitud.idsolicitud}"></span></h2>
+
+        <form th:action="@{/admin/solicitudes-servicio/procesar}" method="post" class="card-box">
+            <input type="hidden" name="idSolicitud" th:value="${solicitud.idsolicitud}">
+            
+            <div class="grid-info">
+                <div>
+                    <h4 style="color: #2563eb; margin-top:0;">Datos del Cliente</h4>
+                    <p><strong>Nombre:</strong> <span th:text="${solicitud.usuario.nombres}"></span></p>
+                    <p><strong>Doc:</strong> <span th:text="${solicitud.usuario.numeroDocumento}"></span></p>
+                    <p><strong>Teléfono:</strong> <span th:text="${solicitud.usuario.telefono}"></span></p>
+                </div>
+                <div>
+                    <h4 style="color: #2563eb; margin-top:0;">Equipo / Problema</h4>
+                    <p><strong>Equipo:</strong> <span th:text="${solicitud.dispositivoNombre}"></span></p>
+                    <p><strong>Problema:</strong> <span th:text="${solicitud.descripcionProblema}"></span></p>
+                    <p><strong>Servicio Base:</strong> <span th:text="${solicitud.servicioBase.nombre}"></span></p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="grid-info">
+                <div>
+                    <label>Diagnóstico Técnico / Notas</label>
+                    <textarea name="diagnostico" rows="4" required placeholder="Ej: Se realizó cambio de pasta térmica..."></textarea>
+                </div>
+                <div>
+                    <label>Costo Final (S/)</label>
+                    <input type="number" name="costoFinal" step="0.01" th:value="${solicitud.servicioBase.precioManoObra}" required>
+                    
+                    <label style="margin-top: 15px;">Tipo Comprobante</label>
+                    <select id="tipoDoc" name="tipoComprobante" onchange="actualizarSerie()">
+                        <option th:each="tc : ${tiposComprobante}" 
+                                th:value="${tc.idTipoComprobante}" 
+                                th:text="${tc.nombre}"
+                                th:data-serie="${tc.serieDefault}"
+                                th:selected="${tc.nombre == tipoSugerido}"> </option>
+                    </select>
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <input type="text" id="serieDoc" readonly style="background: #f1f5f9; flex: 1;">
+                        <input type="text" value="Automático" disabled style="flex: 2;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 20px;">
+                <a th:href="@{/admin/solicitudes-servicio}" class="btn btn-outline" style="margin-right: 10px;">Cancelar</a>
+                <button type="submit" class="btn btn-filled" style="padding: 10px 30px;">
+                    <i class="fas fa-check-circle"></i> Finalizar y Cobrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", actualizarSerie);
+
+        function actualizarSerie() {
+            const select = document.getElementById('tipoDoc');
+            const option = select.options[select.selectedIndex];
+            document.getElementById('serieDoc').value = option.getAttribute('data-serie') || '---';
+        }
+    </script>
+</body>
+</html>

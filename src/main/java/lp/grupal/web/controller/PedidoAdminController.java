@@ -35,7 +35,7 @@ public class PedidoAdminController {
     @Autowired private IVentaDAO ventaDAO;
     @Autowired private IDetalleVentaDAO detalleVentaDAO;
     @Autowired private ICajaDAO cajaDAO;
-    @Autowired private ITipoComprobanteDAO tipoComprobanteDAO; // NUEVO: Necesario para buscar el tipo
+    @Autowired private ITipoComprobanteDAO tipoComprobanteDAO;
 
     // 1. LISTAR PEDIDOS
     @GetMapping
@@ -45,14 +45,13 @@ public class PedidoAdminController {
         Usuario u = (Usuario) session.getAttribute("usuario");
         Integer idEmpresa = u.getEmpresa().getIdempresa();
 
-        // Filtrar por empresa (Método nuevo que debes tener en el DAO)
         List<Pedido> pedidosPendientes = pedidoDAO.findByEmpresaAndEstadoOrderByFechaPedidoDesc(idEmpresa, "PENDIENTE");
         
         model.addAttribute("pedidos", pedidosPendientes);
         return "empresa/pedidos_web"; 
     }
 
-    // 2. REVISAR Y PRE-LLENAR DATOS
+    // 2. REVISAR Y PRE-LLENAR DATOS (LÓGICA MEJORADA)
     @GetMapping("/revisar/{id}")
     public String revisarPedido(@PathVariable("id") Integer idPedido, Model model, HttpSession session, RedirectAttributes flash) {
         if (!validarAcceso(session)) return "redirect:/login";
@@ -65,7 +64,21 @@ public class PedidoAdminController {
 
         model.addAttribute("pedido", pedido);
         
-        // Cargar tipos de comprobante de la empresa para el select
+        // --- DETECCIÓN INTELIGENTE DE COMPROBANTE ---
+        Usuario cliente = pedido.getUsuario();
+        String tipoSugerido = "BOLETA"; // Default
+        
+        if (cliente.getTipoDocumento() != null) {
+            String abrev = cliente.getTipoDocumento().getAbreviatura();
+            // Si es RUC (por abreviatura o longitud de documento)
+            if ("RUC".equals(abrev) || (cliente.getNumeroDocumento() != null && cliente.getNumeroDocumento().length() == 11)) {
+                tipoSugerido = "FACTURA";
+            }
+        }
+        model.addAttribute("tipoSugerido", tipoSugerido);
+        // --------------------------------------------
+
+        // Cargar tipos de comprobante
         Usuario u = (Usuario) session.getAttribute("usuario");
         List<TipoComprobante> tipos = tipoComprobanteDAO.findByEmpresa(u.getEmpresa().getIdempresa());
         model.addAttribute("tiposComprobante", tipos);
@@ -73,11 +86,28 @@ public class PedidoAdminController {
         return "empresa/atender_pedido"; 
     }
 
-    // 3. PROCESAR VENTA (CON TRANSACCIÓN)
+    // 3. RECHAZAR PEDIDO (NUEVO MÉTODO)
+    @GetMapping("/rechazar/{id}")
+    public String rechazarPedido(@PathVariable("id") Integer idPedido, HttpSession session, RedirectAttributes flash) {
+        if (!validarAcceso(session)) return "redirect:/login";
+
+        Pedido pedido = pedidoDAO.findById(idPedido).orElse(null);
+        if (pedido != null && pedido.getEstado().equals("PENDIENTE")) {
+            pedido.setEstado("RECHAZADO");
+            pedido.setMotivoRechazo("Cancelado por administración");
+            pedidoDAO.save(pedido);
+            flash.addFlashAttribute("exito", "Pedido #" + idPedido + " rechazado correctamente.");
+        } else {
+            flash.addFlashAttribute("error", "No se pudo rechazar el pedido.");
+        }
+        return "redirect:/admin/pedidos-web";
+    }
+
+    // 4. PROCESAR VENTA (CON TRANSACCIÓN)
     @PostMapping("/procesar")
     @Transactional
     public String procesarVenta(@RequestParam("idPedido") Integer idPedido,
-                                @RequestParam("idTipoComprobante") Integer idTipoComprobante, // Recibimos ID, no String
+                                @RequestParam("tipoComprobante") Integer idTipoComprobante, 
                                 HttpSession session, 
                                 RedirectAttributes flash) {
         
@@ -92,7 +122,6 @@ public class PedidoAdminController {
                  return "redirect:/admin/pedidos-web";
             }
 
-            // 1. Obtener y Actualizar Comprobante
             TipoComprobante tipoComp = tipoComprobanteDAO.findById(idTipoComprobante).orElse(null);
             if(tipoComp == null) throw new Exception("Tipo de comprobante inválido");
 
@@ -100,27 +129,22 @@ public class PedidoAdminController {
             String numGenerado = String.format("%08d", nuevoCorr);
             
             tipoComp.setCorrelativoActual(nuevoCorr);
-            tipoComprobanteDAO.save(tipoComp); // Guardar nuevo correlativo
+            tipoComprobanteDAO.save(tipoComp);
 
-            // 2. Crear VENTA
             Venta nuevaVenta = new Venta();
             nuevaVenta.setUsuario(pedido.getUsuario());
             nuevaVenta.setEmpleado(usuarioAdmin);
-            nuevaVenta.setEmpresa(usuarioAdmin.getEmpresa()); // IMPORTANTE: Asignar empresa
+            nuevaVenta.setEmpresa(usuarioAdmin.getEmpresa()); 
             nuevaVenta.setEstado("COMPLETADO");
             nuevaVenta.setMonto_total(pedido.getMontoEstimado());
-            
-            // CORRECCIÓN 1: Método CamelCase
             nuevaVenta.setDireccionEnvio(pedido.getObservacionesCliente()); 
             
-            // CORRECCIÓN 2: Asignar Objeto y Datos Generados
             nuevaVenta.setTipoComprobante(tipoComp);
             nuevaVenta.setSerie_comprobante(tipoComp.getSerieDefault());
             nuevaVenta.setNum_comprobante(numGenerado); 
             
             Venta ventaGuardada = ventaDAO.save(nuevaVenta);
             
-            // 3. Copiar Detalles
             for (DetallePedido dp : pedido.getDetalles()) {
                  DetalleVenta dv = new DetalleVenta();
                  dv.setVenta(ventaGuardada);
@@ -130,16 +154,14 @@ public class PedidoAdminController {
                  detalleVentaDAO.save(dv);
             }
             
-            // 4. Actualizar Pedido
             pedido.setEstado("APROBADO");
             pedido.setIdVentaGenerada(ventaGuardada.getIdventa());
             pedido.setIdVendedorRevisor(usuarioAdmin.getIdusuario());
             pedidoDAO.save(pedido);
 
-            // 5. Registrar Caja
             Caja movimiento = new Caja();
             movimiento.setTipoMovimiento("INGRESO");
-            movimiento.setConcepto("Venta Web #" + ventaGuardada.getIdventa() + " - " + tipoComp.getNombre());
+            movimiento.setConcepto("Venta Web #" + ventaGuardada.getIdventa());
             movimiento.setMonto(pedido.getMontoEstimado());
             movimiento.setMetodoPago("WEB/TRANSFERENCIA"); 
             movimiento.setVenta(ventaGuardada);

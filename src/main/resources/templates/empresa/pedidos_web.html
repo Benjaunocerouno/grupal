@@ -120,12 +120,10 @@
                                 style="background: #2563eb; color: white;" 
                                 title="Revisar y Facturar">
                                 <i class="fas fa-file-signature"></i> Atender
-                            </a>
-                                <a th:href="@{/admin/pedidos-web/rechazar/{id}(id=${p.idpedido})}" 
+                            <a th:href="@{/admin/pedidos-web/rechazar/{id}(id=${p.idpedido})}" 
                                 class="btn btn-sm" 
-                                style="background: #fee2e2; color: #dc2626;"
-                                onclick="return confirm('¿Estás seguro de RECHAZAR este pedido? Esta acción no se puede deshacer.');"
-                                title="Rechazar Pedido">
+                                style="background: #fee2e2; color: #dc2626;" 
+                                onclick="return confirm('¿Estás seguro de rechazar este pedido?');">
                                     <i class="fas fa-times"></i>
                             </a>
                         </td>

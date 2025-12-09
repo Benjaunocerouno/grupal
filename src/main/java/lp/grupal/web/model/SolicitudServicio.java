@@ -46,11 +46,21 @@ public class SolicitudServicio {
 
     private String estado;
 
+    // --- CAMPOS NUEVOS QUE FALTABAN ---
+    @Column(name = "id_venta_generada")
+    private Integer idVentaGenerada;
+
+    @Column(name = "diagnostico_tecnico")
+    private String diagnosticoTecnico;
+    // ----------------------------------
+
     @PrePersist
     public void prePersist() {
         fechaSolicitud = LocalDateTime.now();
-        estado = "PENDIENTE";
+        if(estado == null) estado = "PENDIENTE";
     }
+
+    // --- GETTERS Y SETTERS ---
 
     public Integer getIdsolicitud() {
         return idsolicitud;
@@ -124,11 +134,28 @@ public class SolicitudServicio {
         this.estado = estado;
     }
 
+    // --- GETTERS Y SETTERS NUEVOS ---
+    public Integer getIdVentaGenerada() {
+        return idVentaGenerada;
+    }
+
+    public void setIdVentaGenerada(Integer idVentaGenerada) {
+        this.idVentaGenerada = idVentaGenerada;
+    }
+
+    public String getDiagnosticoTecnico() {
+        return diagnosticoTecnico;
+    }
+
+    public void setDiagnosticoTecnico(String diagnosticoTecnico) {
+        this.diagnosticoTecnico = diagnosticoTecnico;
+    }
+
     @Override
     public String toString() {
         return "SolicitudServicio [idsolicitud=" + idsolicitud + ", usuario=" + usuario + ", servicioBase="
                 + servicioBase + ", empresa=" + empresa + ", fechaSolicitud=" + fechaSolicitud + ", fechaCita="
                 + fechaCita + ", dispositivoNombre=" + dispositivoNombre + ", descripcionProblema="
-                + descripcionProblema + ", estado=" + estado + "]";
+                + descripcionProblema + ", estado=" + estado + ", idVentaGenerada=" + idVentaGenerada + "]";
     }
 }

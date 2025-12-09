@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitudes de Servicio | TechAdmin</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .page-wrapper { padding: 30px 5%; max-width: 1400px; margin: 0 auto; }
+        .table-responsive { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { background: #f8fafc; padding: 15px; text-align: left; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+        tr:hover { background-color: #f8fafc; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; background: #fef9c3; color: #854d0e; }
+    </style>
+</head>
+<body>
+    <nav class="navbar"> <div class="logo">TechAdmin</div> <div class="nav-menu"><a href="/admin/dashboard" style="color:white">Volver al Dashboard</a></div> </nav>
+
+    <div class="page-wrapper">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Solicitudes de Servicio</h2>
+            <a th:href="@{/admin/solicitudes-servicio}" class="btn btn-outline"><i class="fas fa-sync-alt"></i> Actualizar</a>
+        </div>
+
+        <div th:if="${exito}" style="background:#dcfce7; color:#166534; padding:10px; margin-bottom:20px; border-radius:5px;" th:text="${exito}"></div>
+        <div th:if="${error}" style="background:#fee2e2; color:#991b1b; padding:10px; margin-bottom:20px; border-radius:5px;" th:text="${error}"></div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Fecha/Cita</th>
+                        <th>Cliente</th>
+                        <th>Dispositivo</th>
+                        <th>Servicio</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="s : ${solicitudes}">
+                        <td style="font-weight: bold; color: #2563eb;" th:text="'#' + ${s.idsolicitud}">#1</td>
+                        <td>
+                            <div th:text="${#temporals.format(s.fechaSolicitud, 'dd/MM/yyyy')}"></div>
+                            <small style="color: #6366f1;" th:text="${#temporals.format(s.fechaCita, 'dd/MM HH:mm')}"></small>
+                        </td>
+                        <td>
+                            <div style="font-weight: bold;" th:text="${s.usuario.nombres}">Juan</div>
+                            <small style="color: #64748b;" th:text="${s.usuario.telefono}">999...</small>
+                        </td>
+                        <td th:text="${s.dispositivoNombre}">iPhone X</td>
+                        <td th:text="${s.servicioBase.nombre}">Cambio Pantalla</td>
+                        <td><span class="status-badge" th:text="${s.estado}">PENDIENTE</span></td>
+                        <td>
+                            <a th:href="@{/admin/solicitudes-servicio/revisar/{id}(id=${s.idsolicitud})}" 
+                               class="btn btn-sm" style="background: #2563eb; color: white;" title="Atender">
+                                <i class="fas fa-tools"></i>
+                            </a>
+                            <a th:href="@{/admin/solicitudes-servicio/rechazar/{id}(id=${s.idsolicitud})}" 
+                               class="btn btn-sm" style="background: #fee2e2; color: #dc2626;"
+                               onclick="return confirm('¿Rechazar esta solicitud?');" title="Rechazar">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(solicitudes)}">
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #64748b;">No hay solicitudes pendientes.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
