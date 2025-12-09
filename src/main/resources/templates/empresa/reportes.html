@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Reportes | TechAdmin</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .kpi-title { font-size: 0.9rem; color: #64748b; margin-bottom: 5px; font-weight: 600; }
+        .kpi-value { font-size: 1.8rem; font-weight: bold; color: #1e293b; }
+        .table-responsive { overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8fafc; padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #475569; }
+        td { padding: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        
+        <div class="nav-menu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+                <li><a th:href="@{/admin/pos}">Ventas / POS</a></li> 
+                <li><a th:href="@{/admin/inventario}">Inventario</a></li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/compras}">Compras</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/proveedores}" class="active">Proveedores</a>
+                </li>
+
+                <li><a th:href="@{/admin/servicios}">Servicios</a></li>
+                <li><a th:href="@{/admin/usuarios}">Clientes</a></li>
+                <li><a th:href="@{/admin/reportes}">Reportes</a></li>
+                <li><a th:href="@{/admin/mantenimiento}">Mantenimiento</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <div style="text-align: right; color: white; margin-right: 10px;">
+                    <span style="font-weight: bold; display: block;" th:text="${session.usuario.nombres}">Usuario</span>
+                    <small style="color: #cbd5e1;" th:text="${session.usuario.tipoUsuario.nombreRol}">Rol</small>
+                </div>
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+
+    <div class="page-wrapper">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #1e293b;">Reportes Empresariales</h2>
+        </div>
+
+        <form th:action="@{/admin/reportes}" method="get" style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; display: flex; gap: 15px; align-items: flex-end;">
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem;">Fecha Inicio</label>
+                <input type="date" name="inicio" th:value="${fInicio}" required style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+            </div>
+            <div>
+                <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem;">Fecha Fin</label>
+                <input type="date" name="fin" th:value="${fFin}" required style="padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px;">
+            </div>
+            <button type="submit" class="btn btn-filled" style="background: #2563eb; color: white; border: none; padding: 9px 20px; border-radius: 4px; cursor: pointer;">
+                <i class="fas fa-filter"></i> Filtrar
+            </button>
+        </form>
+
+        <div class="report-grid">
+            <div class="kpi-card" style="border-left: 4px solid #2563eb;">
+                <div class="kpi-title">Ventas Totales</div>
+                <div class="kpi-value">S/ <span th:text="${#numbers.formatDecimal(totalVentas, 1, 2)}">0.00</span></div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid #16a34a;">
+                <div class="kpi-title">Balance de Caja</div>
+                <div class="kpi-value">S/ <span th:text="${#numbers.formatDecimal(balanceCaja, 1, 2)}">0.00</span></div>
+            </div>
+            <div class="kpi-card" style="border-left: 4px solid #9333ea;">
+                <div class="kpi-title">Transacciones</div>
+                <div class="kpi-value" th:text="${ventas.size()}">0</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+            
+            <div>
+                <h3 style="color: #475569; margin-bottom: 15px;">Productos Más Vendidos</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Producto</th><th style="text-align: center;">Cant.</th><th style="text-align: right;">Total</th></tr></thead>
+                        <tbody>
+                            <tr th:each="p : ${topProductos}">
+                                <td th:text="${p.get('producto')}">Laptop</td>
+                                <td style="text-align: center;" th:text="${p.get('total_vendido')}">10</td>
+                                <td style="text-align: right; font-weight: bold;">S/ <span th:text="${#numbers.formatDecimal(p.get('total_ingreso'), 1, 2)}">5000</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <h3 style="color: #475569; margin-bottom: 15px;">Rendimiento Vendedores</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Vendedor</th><th style="text-align: center;">Ventas</th><th style="text-align: right;">Ingresos</th></tr></thead>
+                        <tbody>
+                            <tr th:each="u : ${ventasPorUsuario}">
+                                <td th:text="${u.get('vendedor')}">Juan</td>
+                                <td style="text-align: center;" th:text="${u.get('cantidad')}">5</td>
+                                <td style="text-align: right; font-weight: bold; color: #16a34a;">S/ <span th:text="${#numbers.formatDecimal(u.get('total'), 1, 2)}">1000</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="color: #475569; margin-bottom: 15px;">Detalle de Ventas del Periodo</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Comprobante</th>
+                        <th>Vendedor</th>
+                        <th style="text-align: right;">Monto Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="v : ${ventas}">
+                        <td th:text="${v.idventa}">#1</td>
+                        <td th:text="${#temporals.format(v.fechaventa, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td th:text="${v.usuario.nombres}">Cliente</td>
+                        <td th:text="${v.tipoComprobante.nombre} + ' ' + ${v.num_comprobante}">BOL-001</td>
+                        <td th:text="${v.empleado.nombres}">Vendedor</td>
+                        <td style="text-align: right; font-weight: bold;">S/ <span th:text="${#numbers.formatDecimal(v.monto_total, 1, 2)}">100.00</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

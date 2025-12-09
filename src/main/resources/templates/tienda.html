@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda | TechSolutions</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="logo"><a th:href="@{/}">Tech<span>Solutions</span></a></div>
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a th:href="@{/}">Inicio</a></li>
+                <li><a th:href="@{/tienda}" class="active">Tienda</a></li>
+                <li><a th:href="@{/servicio}">Servicios</a></li>
+                <li><a th:href="@{/contacto}">Contacto</a></li>
+                <li th:if="${session.usuario != null and session.usuario.tipoUsuario.nombreRol == 'ADMIN'}"><a th:href="@{/admin/dashboard}" style="color: #ff4757;">Admin</a></li>
+                <li th:if="${session.usuario != null and session.usuario.tipoUsuario.nombreRol == 'VENDEDOR'}"><a th:href="@{/ventas/panel}" style="color: #2ed573;">Ventas</a></li>
+            </ul>
+            <div class="auth-buttons">
+                <th:block th:if="${session.usuario == null}">
+                    <a th:href="@{/login}" class="btn btn-outline">Iniciar Sesión</a>
+                    <a th:href="@{/registro}" class="btn btn-filled">Registrarse</a>
+                </th:block>
+                <th:block th:if="${session.usuario != null}">
+                    <div class="cart-icon-container" onclick="toggleCarrito()">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cart-count">0</span>
+                    </div>
+                    <div style="text-align: right; color: white;">
+                        <span style="font-weight: bold; display:block;" th:text="${session.usuario.nombres}">User</span>
+                    </div>
+                    <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; padding: 5px 10px;">Salir</a>
+                </th:block>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+
+    <div class="cart-overlay" id="cart-overlay" onclick="toggleCarrito()"></div>
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header"><h3>Tu Carrito</h3><span class="close-cart" onclick="toggleCarrito()">&times;</span></div>
+        <div class="cart-items" id="cart-items-container"><p style="text-align: center; color: #666;">Vacío</p></div>
+        <div class="cart-footer">
+            <div class="cart-total"><span>Total:</span><span id="cart-total-price">S/ 0.00</span></div>
+            <button class="btn btn-filled" style="width: 100%;" onclick="irAlCheckout()">Finalizar Compra</button>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="vaciarCarrito()">Vaciar</button>
+        </div>
+    </div>
+
+    <header class="hero" style="min-height: 40vh;">
+        <div class="hero-content">
+            <h1>Nuestra <span class="gradient-text">Tienda</span></h1>
+            <p>Catálogo completo de hardware.</p>
+        </div>
+    </header>
+
+    <div class="tienda-layout">
+        <aside class="sidebar-categorias">
+            <h3>Categorías</h3>
+            <ul class="cat-list">
+                <li><a href="#" onclick="filtrarProductos('todos', event)" class="active-cat">Todas</a></li>
+                <li th:each="cat : ${listaCategorias}">
+                    <a href="#" th:text="${cat.nombre}" th:onclick="'filtrarProductos(' + ${cat.idcategoria} + ', event)'">Cat</a>
+                </li>
+            </ul>
+        </aside>
+
+        <main>
+            <div class="tienda-grid" id="grid-productos">
+                <div class="card-producto" th:each="prod : ${listaProductos}" th:data-categoria="${prod.categoria.idcategoria}">
+                    <img th:src="${prod.imagenUrl != null ? prod.imagenUrl : '/img/default-product.png'}" alt="Producto">
+                    <div class="card-body">
+                        <h3 th:text="${prod.nombre}">Nombre</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <span class="precio">S/ <span th:text="${#numbers.formatDecimal(prod.precio, 1, 2)}">0.00</span></span>
+                            <span th:if="${prod.stock > 0}" style="color:#4ade80; font-size:0.8rem;">Stock: <span th:text="${prod.stock}"></span></span>
+                            <span th:unless="${prod.stock > 0}" style="color:#ef4444; font-size:0.8rem;">Agotado</span>
+                        </div>
+                        <button th:if="${prod.stock > 0}" class="btn btn-filled" style="width:100%;" 
+                                th:onclick="agregarAlCarrito([[${prod.idproducto}]], [[${prod.nombre}]], [[${prod.precio}]], [[${prod.imagenUrl}]])">
+                            Añadir
+                        </button>
+                        <button th:unless="${prod.stock > 0}" class="btn btn-outline" style="width:100%;" disabled>Sin Stock</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer><div class="copyright"><p>&copy; 2025 TechSolutions.</p></div></footer>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Si hay usuario, obtenemos su ID y el ID de la empresa actual
+        const userId = /*[[${session.usuario != null ? session.usuario.idusuario : 'guest'}]]*/ 'guest';
+        const empresaId = /*[[${empresa != null ? empresa.idempresa : '1'}]]*/ '1';
+        
+        // Clave única para el LocalStorage: carrito_empresaID_usuarioID
+        const CART_KEY = `carrito_emp1_${userId}`; 
+        // Nota: Simplifiqué a empresa 1 por ahora, pero lo ideal es `carrito_emp${empresaId}_${userId}`
+        /*]]>*/
+    </script>
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

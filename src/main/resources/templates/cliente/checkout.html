@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Finalizar Compra | TechSolutions</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+    
+    <nav class="navbar">
+        <div class="logo">
+            <a th:href="@{/}">Tech<span>Solutions</span></a>
+        </div>
+        
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a th:href="@{/}">Inicio</a></li>
+                <li><a th:href="@{/tienda}">Tienda</a></li>
+                <li><a th:href="@{/servicio}">Servicios</a></li>
+                <li><a th:href="@{/contacto}">Contacto</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <th:block th:if="${session.usuario != null}">
+                    <div style="text-align: right; color: white;">
+                        <span style="font-weight: bold;" th:text="${session.usuario.nombres}">User</span>
+                    </div>
+                    <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; padding: 5px 10px;">Salir</a>
+                </th:block>
+            </div>
+        </div>
+
+        <div class="burger" id="burgerBtn">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <div class="checkout-container">
+        <div class="card-box">
+            <h2 style="margin-bottom: 20px; color: #333;">Datos de Envío</h2>
+            <form id="formCheckout">
+                <div class="form-group">
+                    <label>Dirección de Entrega</label>
+                    <input type="text" id="direccion" required placeholder="Av. Principal 123">
+                </div>
+                <div class="form-group">
+                    <label>Ciudad</label>
+                    <input type="text" id="ciudad" required placeholder="Lima">
+                </div>
+                <div class="form-group">
+                    <label>Referencia</label>
+                    <input type="text" id="referencia" placeholder="Frente al parque...">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono de Contacto</label>
+                    <input type="text" id="telefono" th:value="${session.usuario != null ? session.usuario.telefono : ''}" required>
+                </div>
+                
+                <h3 style="margin-top:20px; color:#333;">Método de Pago</h3>
+                 <div class="form-group">
+                    <select id="tipoPago">
+                        <option value="TARJETA">Tarjeta de Crédito/Débito</option>
+                        <option value="YAPE">Yape / Plin</option>
+                        <option value="TRANSFERENCIA">Transferencia Bancaria</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <div class="card-box">
+            <h2 style="margin-bottom: 20px; color: #333;">Resumen del Pedido</h2>
+            <div id="checkout-items" style="overflow-x: auto;">
+                <p>Cargando productos...</p>
+            </div>
+            
+            <hr style="margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold; color: #333;">
+                <span>Total a Pagar:</span>
+                <span id="checkout-total">S/ 0.00</span>
+            </div>
+
+            <button class="btn btn-filled" style="width: 100%; margin-top: 20px;" onclick="procesarCompraFinal()">
+                Confirmar Compra
+            </button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="copyright"><p>&copy; 2025 TechSolutions. Todos los derechos reservados.</p></div>
+    </footer>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Obtenemos los datos del usuario logueado de la sesión
+        const userId = /*[[${session.usuario != null ? session.usuario.idusuario : 'guest'}]]*/ 'guest';
+        
+        // NOTA: Para el checkout, el ID de empresa no es estrictamente necesario, 
+        // pero si lo pasaste desde otra página, deberías usarlo aquí si lo tienes:
+        const empresaId = /*[[${session.usuario != null && session.usuario.empresa != null ? session.usuario.empresa.idempresa : '1'}]]*/ '1';
+
+        // Clave única: Usa el ID de la empresa Y el ID del usuario
+        const CART_KEY = `carrito_emp${empresaId}_${userId}`; 
+        /*]]>*/
+    </script>
+
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

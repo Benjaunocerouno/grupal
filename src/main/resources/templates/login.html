@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | TechSolutions</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* Centrado vertical para la caja de login */
+        .auth-wrapper {
+            min-height: 80vh; /* Ocupa casi toda la pantalla */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .auth-box { 
+            width: 100%;
+            max-width: 400px; 
+            background: white;
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); /* Sombra más elegante */
+            color: #333;
+        }
+
+        .auth-box h2 { margin-bottom: 25px; color: #1e293b; font-size: 1.8rem; }
+        
+        .alert-error { background:#fee2e2; color:#991b1b; padding:12px; margin-bottom:20px; border-radius:6px; text-align:center; font-size: 0.9rem; border: 1px solid #fca5a5;}
+        .alert-success { background:#dcfce7; color:#166534; padding:12px; margin-bottom:20px; border-radius:6px; text-align:center; font-size: 0.9rem; border: 1px solid #86efac;}
+        
+        /* Inputs mejorados */
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #475569; }
+        input { width:100%; padding:12px; margin-bottom: 20px; border:1px solid #cbd5e1; border-radius:6px; font-size: 1rem; transition: border 0.3s; }
+        input:focus { border-color: #2563eb; outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">
+            <a th:href="@{/}">Tech<span>Solutions</span></a>
+        </div>
+        
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a th:href="@{/}">Inicio</a></li>
+                <li><a th:href="@{/tienda}">Tienda</a></li>
+                <li><a th:href="@{/servicio}">Servicios</a></li>
+                <li><a th:href="@{/contacto}">Contacto</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <a th:href="@{/registro}" class="btn btn-outline">Registrarse</a>
+            </div>
+        </div>
+
+        <div class="burger" id="burgerBtn">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <div class="auth-wrapper">
+        <div class="auth-box">
+            <h2 style="text-align:center">Bienvenido de nuevo</h2>
+            
+            <div th:if="${error}" class="alert-error">
+                <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+            </div>
+            <div th:if="${exito}" class="alert-success">
+                <i class="fas fa-check-circle"></i> <span th:text="${exito}"></span>
+            </div>
+
+            <form th:action="@{/login}" method="post">
+                <div>
+                    <label>Correo Electrónico</label>
+                    <input type="email" name="email" required placeholder="ejemplo@correo.com">
+                </div>
+                
+                <div>
+                    <label>Contraseña</label>
+                    <input type="password" name="password" required placeholder="••••••••">
+                </div>
+                
+                <button type="submit" class="btn btn-filled" style="width:100%; margin-top: 10px; font-size: 1rem;">
+                    Iniciar Sesión
+                </button>
+            </form>
+            
+            <p style="text-align:center; margin-top:25px; font-size: 0.95rem; color: #64748b;">
+                ¿Aún no tienes cuenta? <br>
+                <a th:href="@{/registro}" style="color: var(--primary-blue); font-weight: bold; text-decoration: none;">Crear cuenta gratis</a>
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        <div class="copyright">
+            <p>&copy; 2025 TechSolutions. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

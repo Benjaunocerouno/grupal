@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacto | <span th:text="${empresa.nombre}">TechSolutions</span></title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="logo">
+            <a th:href="@{/}">Tech<span>Solutions</span></a>
+        </div>
+        
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a th:href="@{/}" class="active">Inicio</a></li>
+                <li><a th:href="@{/tienda}">Tienda</a></li>
+                <li><a th:href="@{/servicio}">Servicios</a></li>
+                <li><a th:href="@{/contacto}" class="active">Contacto</a></li>
+                
+                <li th:if="${session.usuario != null and session.usuario.tipoUsuario.nombreRol == 'ADMIN'}">
+                    <a th:href="@{/admin/dashboard}" style="color: #ff4757;">Admin</a>
+                </li>
+                <li th:if="${session.usuario != null and session.usuario.tipoUsuario.nombreRol == 'VENDEDOR'}">
+                    <a th:href="@{/ventas/panel}" style="color: #2ed573;">Ventas</a>
+                </li>
+            </ul>
+
+            <div class="auth-buttons">
+                <th:block th:if="${session.usuario == null}">
+                    <a th:href="@{/login}" class="btn btn-outline">Iniciar Sesión</a>
+                    <a th:href="@{/registro}" class="btn btn-filled">Registrarse</a>
+                </th:block>
+
+                <th:block th:if="${session.usuario != null}">
+                    <div class="cart-icon-container" onclick="toggleCarrito()">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cart-count">0</span>
+                    </div>
+                    <div style="text-align: right; color: white;">
+                        <span style="font-weight: bold; display:block;" th:text="${session.usuario.nombres}">User</span>
+                    </div>
+                    <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; padding: 5px 10px;">Salir</a>
+                </th:block>
+            </div>
+        </div>
+
+        <div class="burger" id="burgerBtn">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <div class="cart-overlay" id="cart-overlay" onclick="toggleCarrito()"></div>
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header"><h3>Tu Carrito</h3><span class="close-cart" onclick="toggleCarrito()">&times;</span></div>
+        <div class="cart-items" id="cart-items-container"></div>
+        <div class="cart-footer">
+            <div class="cart-total"><span>Total:</span><span id="cart-total-price">S/ 0.00</span></div>
+            <button class="btn btn-filled" style="width: 100%;" onclick="irAlCheckout()">Finalizar Compra</button>
+        </div>
+    </div>
+
+    <header class="hero" style="min-height: 40vh;">
+        <div class="hero-content">
+            <h1>Contáctanos</h1>
+            <p>En <span th:text="${empresa.nombre}">TechSolutions</span> estamos aquí para ayudarte.</p>
+                <h3 style="color: #2563eb; margin-bottom: 15px;">Sobre Nosotros</h3>
+                
+                <div th:if="${empresa.mision != null and !empresa.mision.isEmpty()}" style="margin-bottom: 20px;">
+                    <h5 style="font-weight: bold; margin-bottom: 5px;">Nuestra Misión</h5>
+                    <p style="font-style: italic; color: #555;" th:text="${empresa.mision}">Misión...</p>
+                </div>
+
+                <div th:if="${empresa.vision != null and !empresa.vision.isEmpty()}" style="margin-bottom: 20px;">
+                    <h5 style="font-weight: bold; margin-bottom: 5px;">Nuestra Visión</h5>
+                    <p style="font-style: italic; color: #555;" th:text="${empresa.vision}">Visión...</p>
+                </div>
+        </div>
+    </header>
+
+    <section class="section-container">
+        
+        <div th:if="${mensajeExito}" style="background:#dcfce7; color:#166534; padding:15px; margin-bottom:20px; border-radius:5px; text-align: center;">
+            <i class="fas fa-check-circle"></i> <span th:text="${mensajeExito}"></span>
+        </div>
+
+        <div class="contact-wrapper">
+            <div style="color: #333;">
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <h3 style="color: #2563eb;">Información de Contacto</h3>
+                <div style="margin: 15px 0; font-size: 1.1rem;">
+                    <i class="fas fa-map-marker-alt" style="color: #ef4444; width: 25px;"></i> 
+                    <span th:text="${empresa.direccion}">Dirección...</span>
+                </div>
+                <div style="margin: 15px 0; font-size: 1.1rem;">
+                    <i class="fas fa-phone" style="color: #10b981; width: 25px;"></i> 
+                    <span th:text="${empresa.telefonoMostrar}">Teléfono...</span>
+                </div>
+                <div style="margin: 15px 0; font-size: 1.1rem;" th:if="${empresa.emailContacto}">
+                    <i class="fas fa-envelope" style="color: #3b82f6; width: 25px;"></i> 
+                    <span th:text="${empresa.emailContacto}">Email...</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="copyright">
+            <p>&copy; 2025 <span th:text="${empresa.nombre}">TechSolutions</span>. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Si hay usuario, obtenemos su ID y el ID de la empresa actual
+        const userId = /*[[${session.usuario != null ? session.usuario.idusuario : 'guest'}]]*/ 'guest';
+        const empresaId = /*[[${empresa != null ? empresa.idempresa : '1'}]]*/ '1';
+        
+        // Clave única para el LocalStorage: carrito_empresaID_usuarioID
+        const CART_KEY = `carrito_emp1_${userId}`; 
+        // Nota: Simplifiqué a empresa 1 por ahora, pero lo ideal es `carrito_emp${empresaId}_${userId}`
+        /*]]>*/
+    </script>
+    
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

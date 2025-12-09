@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${empresa != null ? empresa.nombre + ' | Inicio' : 'TechSolutions | Inicio'}">TechSolutions | Inicio</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="logo">
+            <a th:href="@{/}">Tech<span>Solutions</span></a>
+        </div>
+        
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a th:href="@{/}" class="active">Inicio</a></li>
+                <li><a th:href="@{/tienda}">Tienda</a></li>
+                <li><a th:href="@{/servicio}">Servicios</a></li>
+                <li><a th:href="@{/contacto}">Contacto</a></li>
+                
+                <li th:if="${session.usuario != null and session.usuario.tipoUsuario.nombreRol == 'ADMIN'}">
+                    <a th:href="@{/admin/dashboard}" style="color: #ff4757;">Admin</a>
+                </li>
+                <li th:if="${session.usuario != null and session.usuario.tipoUsuario.nombreRol == 'VENDEDOR'}">
+                    <a th:href="@{/ventas/panel}" style="color: #2ed573;">Ventas</a>
+                </li>
+            </ul>
+
+            <div class="auth-buttons">
+                <th:block th:if="${session.usuario == null}">
+                    <a th:href="@{/login}" class="btn btn-outline">Iniciar Sesión</a>
+                    <a th:href="@{/registro}" class="btn btn-filled">Registrarse</a>
+                </th:block>
+
+                <th:block th:if="${session.usuario != null}">
+                    <div class="cart-icon-container" onclick="toggleCarrito()">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cart-count">0</span>
+                    </div>
+                    <div style="text-align: right; color: white;">
+                        <span style="font-weight: bold; display:block;" th:text="${session.usuario.nombres}">User</span>
+                    </div>
+                    <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; padding: 5px 10px;">Salir</a>
+                </th:block>
+            </div>
+        </div>
+
+        <div class="burger" id="burgerBtn">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Tecnología al <span class="gradient-text">Siguiente Nivel</span></h1>
+            <p>Encuentra los mejores componentes y solicita servicio técnico especializado.</p>
+            <div class="hero-btns">
+                <a th:href="@{/tienda}" class="btn btn-filled">Ver Productos</a>
+                <a th:href="@{/servicio}" class="btn btn-outline">Solicitar Reparación</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="services-banner" style="background: var(--primary-purple); color: white; padding: 40px 5%; margin-top: -3rem; text-align: center; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px;">
+        <div class="service-text">
+            <h2 style="margin: 0; font-size: 1.8rem;">¿Tu equipo falla?</h2>
+            <p style="margin: 5px 0 0 0;">Nuestros expertos están listos para diagnosticar y reparar tu dispositivo.</p>
+        </div>
+        <a th:href="@{/servicio}" class="btn btn-filled" style="background: white; color: var(--primary-purple); border: none; font-size: 1.1rem; padding: 10px 25px;">Agendar Cita</a>
+    </section>
+
+    <section class="section-container">
+        <h2 class="section-title">Nuevos Ingresos</h2>
+        <div class="grid-container">
+            <div class="card-producto" th:each="prod : ${listaProductos}">
+                <img th:src="${prod.imagenUrl != null ? prod.imagenUrl : '/img/default-product.png'}" alt="Producto">
+                <div class="card-body">
+                    <h3 th:text="${prod.nombre}">Nombre</h3>
+                    <p class="precio">S/ <span th:text="${#numbers.formatDecimal(prod.precio, 1, 2)}">0.00</span></p>
+                    <a th:href="@{/tienda}" class="btn btn-outline" style="width:100%; margin-top: auto;">Ver en Tienda</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-container" id="servicios-home">
+        <h2 class="section-title">Servicios Populares</h2>
+        <div class="grid-container">
+             <div class="card-servicio" th:each="serv : ${listaServicios}" 
+                  style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: #333;">
+                
+                <h3 th:text="${serv.nombre}" style="margin-bottom: 10px; color: #2563eb;">Nombre</h3>
+                <p th:text="${serv.descripcion}" style="color: #636e72; font-size: 0.9rem;">Desc...</p>
+                
+                <p style="color: #16a34a; font-weight: bold; margin: 15px 0;">
+                    Desde S/ <span th:text="${#numbers.formatDecimal(serv.precioManoObra, 1, 2)}">0.00</span>
+                </p>
+                
+                <a th:href="@{/servicio/agendar/{id}(id=${serv.idservicio})}" class="btn btn-filled" style="width:100%; background: var(--primary-purple);">Agendar Cita</a>
+             </div>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+             <a th:href="@{/servicio}" class="btn btn-outline" style="font-size: 1.1rem; padding: 10px 30px;">Ver todos los servicios</a>
+        </div>
+    </section>
+
+
+    <footer><div class="copyright"><p>&copy; 2025 TechSolutions.</p></div></footer>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Si hay usuario, obtenemos su ID y el ID de la empresa actual
+        const userId = /*[[${session.usuario != null ? session.usuario.idusuario : 'guest'}]]*/ 'guest';
+        const empresaId = /*[[${empresa != null ? empresa.idempresa : '1'}]]*/ '1';
+        
+        // Clave única para el LocalStorage: carrito_empresaID_usuarioID
+        const CART_KEY = `carrito_emp1_${userId}`; 
+        // Nota: Simplifiqué a empresa 1 por ahora, pero lo ideal es `carrito_emp${empresaId}_${userId}`
+        /*]]>*/
+    </script>
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

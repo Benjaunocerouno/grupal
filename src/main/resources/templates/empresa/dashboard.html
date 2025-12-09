@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control | TechSolutions</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .dashboard-wrapper { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; }
+        .panel-zone { padding: 30px; border-radius: 15px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        .zone-virtual { background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #334155; color: white; }
+        .zone-virtual .stat-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+        .zone-virtual h2 { color: white; }
+
+        .zone-physical { background: linear-gradient(145deg, #ffffff, #f8fafc); border: 1px solid #e2e8f0; color: #1e293b; }
+        .zone-physical .stat-card { background: white; border: 1px solid #cbd5e1; }
+        .zone-physical h2 { color: #1e293b; }
+        .zone-physical .stat-number { color: #2563eb; }
+
+        .zone-header { display: flex; align-items: center; gap: 15px; padding-bottom: 15px; border-bottom: 2px solid rgba(255,255,255,0.1); margin-bottom: 10px; }
+        .zone-physical .zone-header { border-bottom-color: #e2e8f0; }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .stat-card { padding: 20px; border-radius: 10px; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-number { font-size: 2.5rem; font-weight: bold; }
+        .zone-virtual .stat-number { color: #4ade80; }
+        .stat-label { font-size: 0.9rem; opacity: 0.8; margin-top: 5px; }
+        .stat-icon { position: absolute; right: 15px; top: 15px; font-size: 2rem; opacity: 0.15; }
+
+        .stock-alert-bar { background-color: #ef4444; color: white; padding: 15px 20px; margin: 20px 20px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; animation: pulse 2s infinite; cursor: pointer; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+        @media (max-width: 900px) { .dashboard-wrapper { grid-template-columns: 1fr; } }
+    </style>
+</head>
+
+<body>
+
+     <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        
+        <div class="nav-menu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+
+                <li><a th:href="@{/admin/pos}">Ventas / POS</a></li> 
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/inventario}">Inventario</a></li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/compras}">Compras</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/proveedores}">Proveedores</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/servicios}">Servicios</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/usuarios}">Clientes</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/reportes}">Reportes</a>
+                </li>
+
+                <li>
+                    <a th:href="@{/admin/mantenimiento}">Mantenimiento</a>
+                </li>
+            </ul>
+
+            <div class="auth-buttons">
+                <div style="text-align: right; color: white; margin-right: 10px;">
+                    <span style="font-weight: bold; display: block;" th:text="${session.usuario.nombres}">Usuario</span>
+                    <small style="color: #cbd5e1;" th:text="${session.usuario.tipoUsuario.nombreRol}">Rol</small>
+                </div>
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+
+    <div th:if="${!alertasStock.isEmpty()}">
+        <div class="stock-alert-bar" onclick="window.location.href='/admin/inventario'">
+            <div>
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>ALERTA DE STOCK:</strong> Se detectaron <span th:text="${alertasStock.size()}">0</span> productos con stock crítico.
+            </div>
+            <button class="btn btn-sm" style="background: white; color: #ef4444; border: none; font-weight: bold;">Ver Detalles</button>
+        </div>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <div class="panel-zone zone-virtual">
+            <div class="zone-header">
+                <i class="fas fa-globe" style="font-size: 1.8rem; color: #a855f7;"></i>
+                <div>
+                    <h2 style="margin:0; font-size: 1.5rem;">Tienda Virtual</h2>
+                    <small style="opacity: 0.7;">Pedidos Web y Solicitudes Online</small>
+                </div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-card" onclick="window.location.href='/admin/pedidos-web'">
+                    <i class="fas fa-shopping-basket stat-icon"></i>
+                    <div class="stat-number" th:text="${virtual_pendientes}">0</div>
+                    <div class="stat-label">Pedidos por Atender</div>
+                </div>
+                <div class="stat-card" onclick="window.location.href='/admin/solicitudes-servicio'">
+                    <i class="fas fa-laptop-medical stat-icon"></i>
+                    <div class="stat-number" style="color: #facc15;" th:text="${virtual_servicios}">0</div>
+                    <div class="stat-label">Solicitudes Reparación</div>
+                </div>
+            </div>
+            <div style="margin-top: auto;">
+                <a href="#" class="btn btn-outline" style="width: 100%; text-align: center; border-color: #a855f7; color: #a855f7;">Gestionar Web</a>
+            </div>
+        </div>
+
+        <div class="panel-zone zone-physical">
+            <div class="zone-header">
+                <i class="fas fa-store" style="font-size: 1.8rem; color: #2563eb;"></i>
+                <div>
+                    <h2 style="margin:0; font-size: 1.5rem;">Tienda Física</h2>
+                    <small style="color: #64748b;">Punto de Venta y Taller</small>
+                </div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-card" onclick="window.location.href='/admin/pos'" style="background: #eff6ff; border-color: #2563eb;">
+                    <i class="fas fa-cash-register stat-icon" style="color: #2563eb; opacity: 0.5;"></i>
+                    <h3 style="margin:0; color: #2563eb;">Nueva Venta</h3>
+                    <p style="font-size: 0.8rem; margin-top: 5px;">Abrir Caja POS</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-receipt stat-icon"></i>
+                    <div class="stat-number" th:text="${fisica_ventas}">0</div>
+                    <div class="stat-label">Ventas Realizadas</div>
+                </div>
+                <div class="stat-card" onclick="window.location.href='/admin/taller'">
+                    <i class="fas fa-check-circle stat-icon"></i>
+                    <div class="stat-number" style="color: #16a34a;" th:text="${fisica_servicios_ok}">0</div>
+                    <div class="stat-label">Equipos Listos</div>
+                </div>
+            </div>
+            <div style="margin-top: auto;">
+                <a href="#" class="btn btn-filled" style="width: 100%; text-align: center; background: #2563eb;">Ir al Taller / Caja</a>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

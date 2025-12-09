@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios | TechAdmin</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .page-wrapper { padding: 30px 5%; max-width: 1400px; margin: 0 auto; }
+        
+        /* Tarjeta Top Cliente */
+        .top-client-card {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+        }
+        .top-client-info h2 { margin: 0; font-size: 1.8rem; }
+        .top-client-info p { margin: 5px 0 0; opacity: 0.9; }
+        .top-client-medal { font-size: 3.5rem; color: #facc15; }
+
+        /* Barra de herramientas */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .search-form { display: flex; gap: 10px; flex-grow: 1; max-width: 500px; }
+        .search-form input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+
+        /* Tabla */
+        .table-responsive { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { background: #f8fafc; padding: 15px; text-align: left; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        tr:hover { background-color: #f8fafc; }
+
+        /* Estados */
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-blocked { background: #fee2e2; color: #991b1b; }
+
+        /* Botones Acción */
+        .action-btn { padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.9rem; margin-right: 5px; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-edit { background: #eff6ff; color: #2563eb; }
+        .btn-block { background: #fff1f2; color: #e11d48; }
+        .btn-unblock { background: #ecfdf5; color: #059669; }
+        
+        .btn-edit:hover { background: #dbeafe; }
+    </style>
+</head>
+
+<body>
+
+        <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        
+        <div class="nav-menu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+
+                <li><a th:href="@{/admin/pos}">Ventas / POS</a></li> 
+
+                <li><a th:href="@{/admin/inventario}">Inventario</a></li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/compras}">Compras</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/proveedores}">Proveedores</a>
+                </li>
+
+                <li><a th:href="@{/admin/servicios}">Servicios</a></li>
+
+                <li><a th:href="@{/admin/usuarios}">Clientes</a></li>
+
+                <li><a th:href="@{/admin/reportes}">Reportes</a></li>
+
+                <li><a th:href="@{/admin/mantenimiento}">Mantenimiento</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <div style="text-align: right; color: white; margin-right: 10px;">
+                    <span style="font-weight: bold; display: block;" th:text="${session.usuario.nombres}">Usuario</span>
+                    <small style="color: #cbd5e1;" th:text="${session.usuario.tipoUsuario.nombreRol}">Rol</small>
+                </div>
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav><div class="page-wrapper">
+        
+        <div class="header-section">
+            <h2>Centro de Mantenimiento</h2>
+            <p>Gestiona la configuración de tu cuenta y los recursos de la empresa.</p>
+        </div>
+
+        <div class="modules-grid">
+            
+            <a th:href="@{/admin/mantenimiento/perfil}" class="module-card card-profile">
+                <div class="icon-box"><i class="fas fa-user-circle"></i></div>
+                <div class="module-title">Mi Perfil</div>
+                <div class="module-desc">Actualiza tus datos personales y contraseña de acceso.</div>
+            </a>
+
+            <th:block th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                
+                <a th:href="@{/admin/mantenimiento/empresa}" class="module-card">
+                    <div class="icon-box"><i class="fas fa-building"></i></div>
+                    <div class="module-title">Datos Empresa</div>
+                    <div class="module-desc">Logo, Misión, Visión y datos de contacto.</div>
+                </a>
+
+                <a th:href="@{/admin/proveedores}" class="module-card">
+                    <div class="icon-box" style="color: #f59e0b;"><i class="fas fa-truck"></i></div>
+                    <div class="module-title">Proveedores</div>
+                    <div class="module-desc">Gestiona la lista de socios comerciales.</div>
+                </a>
+
+                <a th:href="@{/admin/compras}" class="module-card">
+                    <div class="icon-box" style="color: #ef4444;"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="module-title">Compras</div>
+                    <div class="module-desc">Registro de facturas y reabastecimiento.</div>
+                </a>
+
+                <a th:href="@{/admin/mantenimiento/categorias}" class="module-card">
+                    <div class="icon-box" style="color: #8b5cf6;"><i class="fas fa-tags"></i></div>
+                    <div class="module-title">Categorías</div>
+                    <div class="module-desc">Clasificación de productos y servicios.</div>
+                </a>
+
+            </th:block> </div>
+    </div>
+
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

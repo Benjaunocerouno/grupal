@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario | TechAdmin</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .page-wrapper { padding: 30px 5%; max-width: 1400px; margin: 0 auto; }
+        
+        /* Toolbar */
+        .toolbar { display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .search-form { display: flex; gap: 10px; flex-grow: 1; max-width: 500px; }
+        .search-form input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+
+        /* Tabla */
+        .table-responsive { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { background: #f8fafc; padding: 15px; text-align: left; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+        tr:hover { background-color: #f8fafc; }
+
+        /* Stock Badges */
+        .stock-tag { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85rem; }
+        .stock-ok { color: #16a34a; background: #dcfce7; }
+        .stock-low { color: #dc2626; background: #fee2e2; animation: pulse-red 2s infinite; }
+        
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        /* Imagen miniatura */
+        .thumb-img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; }
+    </style>
+</head>
+
+<body>
+
+        <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        
+        <div class="nav-menu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+
+                <li><a th:href="@{/admin/pos}">Ventas / POS</a></li> 
+
+                <li><a th:href="@{/admin/inventario}">Inventario</a></li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/compras}">Compras</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/proveedores}">Proveedores</a>
+                </li>
+
+                <li><a th:href="@{/admin/servicios}">Servicios</a></li>
+
+                <li><a th:href="@{/admin/usuarios}">Clientes</a></li>
+
+                <li><a th:href="@{/admin/reportes}">Reportes</a></li>
+
+                <li><a th:href="@{/admin/mantenimiento}">Mantenimiento</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <div style="text-align: right; color: white; margin-right: 10px;">
+                    <span style="font-weight: bold; display: block;" th:text="${session.usuario.nombres}">Usuario</span>
+                    <small style="color: #cbd5e1;" th:text="${session.usuario.tipoUsuario.nombreRol}">Rol</small>
+                </div>
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+
+    <div class="page-wrapper">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #333;">Inventario de Productos</h2>
+            <a th:href="@{/admin/inventario/nuevo}" class="btn btn-filled"><i class="fas fa-plus"></i> Nuevo Producto</a>
+        </div>
+
+        <div class="toolbar">
+            <form class="search-form" th:action="@{/admin/inventario}" method="get">
+                <input type="text" name="buscar" placeholder="Buscar por nombre, marca o código..." th:value="${palabraClave}">
+                <button type="submit" class="btn btn-filled"><i class="fas fa-search"></i></button>
+                <a th:href="@{/admin/inventario}" class="btn btn-outline" th:if="${palabraClave != null}">X</a>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Img</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th>Mínimo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="prod : ${productos}">
+                        <td>
+                            <img th:src="${prod.imagenUrl != null && !prod.imagenUrl.isEmpty() ? prod.imagenUrl : '/img/default-product.png'}" class="thumb-img">
+                        </td>
+                        <td>
+                            <strong th:text="${prod.nombre}" style="display:block;">Nombre</strong>
+                            <small th:text="${prod.marca} + ' - ' + ${prod.codigoBarras}" style="color:#888;">Marca</small>
+                        </td>
+                        <td th:text="${prod.categoria.nombre}">Cat</td>
+                        <td style="font-weight: bold;">S/ <span th:text="${#numbers.formatDecimal(prod.precio, 1, 2)}">0.00</span></td>
+                        
+                        <td>
+                            <span th:class="${prod.stock <= prod.stockMinimo} ? 'stock-tag stock-low' : 'stock-tag stock-ok'"
+                                  th:text="${prod.stock} + ' un.'">
+                                10 un.
+                            </span>
+                        </td>
+                        
+                        <td th:text="${prod.stockMinimo}">5</td>
+                        
+                        <td>
+                            <a th:href="@{/admin/inventario/editar/{id}(id=${prod.idproducto})}" class="btn btn-sm" style="color: #2563eb; background: #eff6ff;">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a th:href="@{/admin/inventario/eliminar/{id}(id=${prod.idproducto})}" class="btn btn-sm" style="color: #dc2626; background: #fef2f2;" 
+                               onclick="return confirm('¿Eliminar este producto? (Se ocultará de la tienda)');">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(productos)}">
+                        <td colspan="7" style="text-align: center; padding: 30px;">No se encontraron productos.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

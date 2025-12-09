@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Atender Pedido | TechAdmin</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .page-wrapper { padding: 40px 5%; max-width: 1000px; margin: 0 auto; }
+        .review-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        .card-box { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px; }
+        .total-row { font-size: 1.2rem; font-weight: bold; color: #2563eb; margin-top: 20px; text-align: right; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: left; background: #f8fafc; padding: 10px; font-size: 0.9rem; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        
+        <div class="nav-menu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+
+                <li><a th:href="@{/admin/pos}">Ventas / POS</a></li> 
+
+                <li><a th:href="@{/admin/inventario}">Inventario</a></li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/compras}">Compras</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/proveedores}">Proveedores</a>
+                </li>
+
+                <li><a th:href="@{/admin/servicios}">Servicios</a></li>
+
+                <li><a th:href="@{/admin/usuarios}">Clientes</a></li>
+
+                <li><a th:href="@{/admin/reportes}">Reportes</a></li>
+
+                <li><a th:href="@{/admin/mantenimiento}">Mantenimiento</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <div style="text-align: right; color: white; margin-right: 10px;">
+                    <span style="font-weight: bold; display: block;" th:text="${session.usuario.nombres}">Usuario</span>
+                    <small style="color: #cbd5e1;" th:text="${session.usuario.tipoUsuario.nombreRol}">Rol</small>
+                </div>
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+
+    <div class="page-wrapper">
+        <h2 style="margin-bottom: 20px;">Atención de Pedido #<span th:text="${pedido.idpedido}"></span></h2>
+
+        <form th:action="@{/admin/pedidos-web/procesar}" method="post">
+            <input type="hidden" name="idPedido" th:value="${pedido.idpedido}">
+            
+            <div class="review-grid">
+                <div class="card-box">
+                    <h3><i class="fas fa-list"></i> Detalle de Productos</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cant.</th>
+                                <th>Precio Unit.</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="det : ${pedido.detalles}">
+                                <td th:text="${det.producto.nombre}">Laptop</td>
+                                <td th:text="${det.cantidad}">1</td>
+                                <td>S/ <span th:text="${#numbers.formatDecimal(det.precioReferencial, 1, 2)}">100.00</span></td>
+                                <td>S/ <span th:text="${#numbers.formatDecimal(det.cantidad * det.precioReferencial, 1, 2)}">100.00</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="total-row">
+                        Total a Cobrar: S/ <span th:text="${#numbers.formatDecimal(pedido.montoEstimado, 1, 2)}">0.00</span>
+                    </div>
+
+                    <div style="margin-top: 20px; background: #fffbeb; padding: 15px; border-radius: 8px; border: 1px solid #fcd34d;">
+                        <strong><i class="fas fa-info-circle"></i> Datos del Cliente:</strong>
+                        <p style="margin: 5px 0;">Cliente: <span th:text="${pedido.usuario.nombres}">Nombre</span></p>
+                        <p style="margin: 5px 0;">Nota Cliente: <span th:text="${pedido.observacionesCliente}">...</span></p>
+                    </div>
+                </div>
+
+                <div class="card-box" style="height: fit-content;">
+                    <h3 style="color: #1e293b; margin-bottom: 20px;"><i class="fas fa-file-invoice-dollar"></i> Datos de Facturación</h3>
+                    
+                    <label style="font-weight: bold;">Tipo Comprobante</label>
+                    <select id="tipoDoc" name="tipoComprobante" onchange="actualizarSerie()"
+                            style="width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px;">
+                        <option value="BOLETA">Boleta de Venta</option>
+                        <option value="FACTURA">Factura</option>
+                    </select>
+
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-weight: bold;">Serie</label>
+                            <input type="text" id="serieDoc" name="serieComprobante" th:value="${serieSugerida}" readonly
+                                   style="width: 100%; padding: 10px; background: #f1f5f9; border: 1px solid #ccc; border-radius: 5px;">
+                        </div>
+                        <div style="flex: 2;">
+                            <label style="font-weight: bold;">Número (Correlativo)</label>
+                            <input type="text" name="numComprobante" th:value="${numeroSugerido}" 
+                                   style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                        </div>
+                    </div>
+                    <small style="display:block; margin-bottom: 20px; color: #64748b;">* El número se ha autocalculado.</small>
+
+                    <button type="submit" class="btn btn-filled" style="width: 100%; font-size: 1.1rem; padding: 12px;">
+                        <i class="fas fa-check-circle"></i> Confirmar Venta
+                    </button>
+                    
+                    <a th:href="@{/admin/pedidos-web}" class="btn btn-outline" style="width: 100%; display: block; text-align: center; margin-top: 10px;">
+                        Cancelar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    function actualizarSerie() {
+        const tipo = document.getElementById('tipoDoc').value;
+        const inputSerie = document.getElementById('serieDoc');
+        
+        if (tipo === 'BOLETA') {
+            inputSerie.value = 'B001';
+        } else if (tipo === 'FACTURA') {
+            inputSerie.value = 'F001';
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios | TechAdmin</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .page-wrapper { padding: 30px 5%; max-width: 1400px; margin: 0 auto; }
+        
+        /* Tarjeta Top Cliente */
+        .top-client-card {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+        }
+        .top-client-info h2 { margin: 0; font-size: 1.8rem; }
+        .top-client-info p { margin: 5px 0 0; opacity: 0.9; }
+        .top-client-medal { font-size: 3.5rem; color: #facc15; }
+
+        /* Barra de herramientas */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .search-form { display: flex; gap: 10px; flex-grow: 1; max-width: 500px; }
+        .search-form input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+
+        /* Tabla */
+        .table-responsive { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { background: #f8fafc; padding: 15px; text-align: left; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        tr:hover { background-color: #f8fafc; }
+
+        /* Estados */
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-blocked { background: #fee2e2; color: #991b1b; }
+
+        /* Botones Acción */
+        .action-btn { padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.9rem; margin-right: 5px; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-edit { background: #eff6ff; color: #2563eb; }
+        .btn-block { background: #fff1f2; color: #e11d48; }
+        .btn-unblock { background: #ecfdf5; color: #059669; }
+        
+        .btn-edit:hover { background: #dbeafe; }
+    </style>
+</head>
+
+<body>
+
+        <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        
+        <div class="nav-menu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+
+                <li><a th:href="@{/admin/pos}">Ventas / POS</a></li> 
+
+                <li><a th:href="@{/admin/inventario}">Inventario</a></li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/compras}">Compras</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/proveedores}">Proveedores</a>
+                </li>
+
+                <li><a th:href="@{/admin/servicios}">Servicios</a></li>
+
+                <li><a th:href="@{/admin/usuarios}">Clientes</a></li>
+
+                <li><a th:href="@{/admin/reportes}">Reportes</a></li>
+
+                <li><a th:href="@{/admin/mantenimiento}">Mantenimiento</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <div style="text-align: right; color: white; margin-right: 10px;">
+                    <span style="font-weight: bold; display: block;" th:text="${session.usuario.nombres}">Usuario</span>
+                    <small style="color: #cbd5e1;" th:text="${session.usuario.tipoUsuario.nombreRol}">Rol</small>
+                </div>
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+
+    <div class="page-wrapper">
+        
+        <div class="top-client-card" th:if="${topCliente != null}">
+            <div class="top-client-info">
+                <small style="text-transform: uppercase; letter-spacing: 1px;">Cliente Estrella</small>
+                <h2 th:text="${topCliente.get('nombres')}">Nombre Cliente</h2>
+                <p>Total Comprado: <strong>S/ <span th:text="${#numbers.formatDecimal(topCliente.get('total_gastado'), 1, 2)}">0.00</span></strong></p>
+                <p style="font-size: 0.85rem; opacity: 0.8;" th:text="${topCliente.get('email')}">email@ejemplo.com</p>
+            </div>
+            <div class="top-client-medal">
+                <i class="fas fa-crown"></i>
+            </div>
+        </div>
+
+        <div class="top-client-card" th:if="${topCliente == null}" style="background: #64748b;">
+            <div class="top-client-info">
+                <h2>Sin Datos</h2>
+                <p>Aún no hay compras registradas para calcular el cliente estrella.</p>
+            </div>
+        </div>
+
+        <h2 style="margin-bottom: 20px; color: #333;">Listado de Clientes Inscritos</h2>
+
+        <div class="toolbar">
+            <form class="search-form" th:action="@{/admin/usuarios}" method="get">
+                <input type="text" name="buscar" placeholder="Buscar por nombre..." th:value="${palabraClave}">
+                <button type="submit" class="btn btn-filled"><i class="fas fa-search"></i> Buscar</button>
+                <a th:href="@{/admin/usuarios}" class="btn btn-outline" th:if="${palabraClave != null}">Limpiar</a>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre Completo</th>
+                        <th>Usuario</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="user : ${clientes}">
+                        <td th:text="${user.idusuario}">1</td>
+                        <td th:text="${user.nombres}">Juan Perez</td>
+                        <td th:text="${user.username}">juanp</td>
+                        <td th:text="${user.email}">juan@mail.com</td>
+                        <td th:text="${user.telefono}">999...</td>
+                        <td>
+                            <span th:if="${user.estado == 1}" class="badge badge-active">Activo</span>
+                            <span th:if="${user.estado == 0}" class="badge badge-blocked">Bloqueado</span>
+                        </td>
+                        <td>
+                            <a th:if="${user.estado == 1}" 
+                               th:href="@{/admin/usuarios/cambiar-estado/{id}(id=${user.idusuario})}" 
+                               class="action-btn btn-block" 
+                               onclick="return confirm('¿Seguro que deseas BLOQUEAR a este usuario?');">
+                                <i class="fas fa-ban"></i> Bloquear
+                            </a>
+
+                            <a th:if="${user.estado == 0}" 
+                               th:href="@{/admin/usuarios/cambiar-estado/{id}(id=${user.idusuario})}" 
+                               class="action-btn btn-unblock"
+                               onclick="return confirm('¿Reactivar usuario?');">
+                                <i class="fas fa-unlock"></i> Activar
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(clientes)}">
+                        <td colspan="7" style="text-align: center; padding: 30px;">No se encontraron usuarios.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

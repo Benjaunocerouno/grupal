@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Servicios | TechAdmin</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .page-wrapper { padding: 30px 5%; max-width: 1400px; margin: 0 auto; }
+        .toolbar { display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .search-form { display: flex; gap: 10px; flex-grow: 1; max-width: 500px; }
+        .search-form input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .table-responsive { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { background: #f8fafc; padding: 15px; text-align: left; color: #64748b; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 12px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+        tr:hover { background-color: #f8fafc; }
+    </style>
+</head>
+
+<body>
+
+        <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        
+        <div class="nav-menu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+
+                <li><a th:href="@{/admin/pos}">Ventas / POS</a></li> 
+
+                <li><a th:href="@{/admin/inventario}">Inventario</a></li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/compras}">Compras</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/proveedores}">Proveedores</a>
+                </li>
+
+                <li><a th:href="@{/admin/servicios}">Servicios</a></li>
+
+                <li><a th:href="@{/admin/usuarios}">Clientes</a></li>
+
+                <li><a th:href="@{/admin/reportes}">Reportes</a></li>
+
+                <li><a th:href="@{/admin/mantenimiento}">Mantenimiento</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <div style="text-align: right; color: white; margin-right: 10px;">
+                    <span style="font-weight: bold; display: block;" th:text="${session.usuario.nombres}">Usuario</span>
+                    <small style="color: #cbd5e1;" th:text="${session.usuario.tipoUsuario.nombreRol}">Rol</small>
+                </div>
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+
+    <div class="page-wrapper">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #333;">Catálogo de Servicios</h2>
+            <a th:href="@{/admin/servicios/nuevo}" class="btn btn-filled"><i class="fas fa-plus"></i> Nuevo Servicio</a>
+        </div>
+
+        <div class="toolbar">
+            <form class="search-form" th:action="@{/admin/servicios}" method="get">
+                <input type="text" name="buscar" placeholder="Buscar servicio..." th:value="${palabraClave}">
+                <button type="submit" class="btn btn-filled"><i class="fas fa-search"></i></button>
+                <a th:href="@{/admin/servicios}" class="btn btn-outline" th:if="${palabraClave != null}">X</a>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre del Servicio</th>
+                        <th>Descripción Corta</th>
+                        <th>Costo Mano de Obra</th>
+                        <th>Tiempo Aprox.</th>
+                        <th>Garantía</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="serv : ${servicios}">
+                        <td th:text="${serv.idservicio}">1</td>
+                        <td style="font-weight: bold;" th:text="${serv.nombre}">Formateo</td>
+                        <td th:text="${#strings.abbreviate(serv.descripcion, 50)}">Desc...</td>
+                        <td style="color: #2563eb; font-weight: bold;">S/ <span th:text="${#numbers.formatDecimal(serv.precioManoObra, 1, 2)}">0.00</span></td>
+                        <td><i class="far fa-clock"></i> <span th:text="${serv.tiempoEstimadoMins}">60</span> min</td>
+                        <td><i class="fas fa-shield-alt"></i> <span th:text="${serv.garantiaDias}">30</span> días</td>
+                        <td>
+                            <a th:href="@{/admin/servicios/editar/{id}(id=${serv.idservicio})}" class="btn btn-sm" style="color: #2563eb; background: #eff6ff;">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a th:href="@{/admin/servicios/eliminar/{id}(id=${serv.idservicio})}" class="btn btn-sm" style="color: #dc2626; background: #fef2f2;" 
+                               onclick="return confirm('¿Eliminar este servicio del catálogo?');">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(servicios)}">
+                        <td colspan="7" style="text-align: center; padding: 30px;">No se encontraron servicios registrados.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

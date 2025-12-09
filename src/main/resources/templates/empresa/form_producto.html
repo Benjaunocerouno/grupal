@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario Producto | TechAdmin</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .form-wrapper { max-width: 800px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); color: #333; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        label { font-weight: bold; margin-bottom: 5px; display: block; font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .full-width { grid-column: span 2; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+            </ul>
+            <div class="auth-buttons">
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: red; color: red;">Salir</a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+
+    <div class="page-wrapper">
+        <div class="form-wrapper">
+            <h2 style="margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                <i class="fas fa-box-open"></i> <span th:text="${titulo}">Producto</span>
+            </h2>
+
+            <form th:action="@{/admin/inventario/guardar}" th:object="${producto}" method="post">
+                <input type="hidden" th:field="*{idproducto}">
+                <input type="hidden" th:field="*{activo}">
+
+                <div class="form-grid">
+                    <div class="full-width">
+                        <label>Nombre del Producto</label>
+                        <input type="text" th:field="*{nombre}" required placeholder="Ej: Laptop Gamer HP">
+                    </div>
+
+                    <div>
+                        <label>Marca</label>
+                        <input type="text" th:field="*{marca}" required placeholder="Ej: HP">
+                    </div>
+
+                    <div>
+                        <label>Modelo</label>
+                        <input type="text" th:field="*{modelo}" placeholder="Ej: Pavilion 15">
+                    </div>
+
+                    <div>
+                        <label>Categoría</label>
+                        <select th:field="*{categoria}" required>
+                            <option value="">Seleccione...</option>
+                            <option th:each="cat : ${categorias}" 
+                                    th:value="${cat.idcategoria}" 
+                                    th:text="${cat.nombre}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Código de Barras / SKU</label>
+                        <input type="text" th:field="*{codigoBarras}" placeholder="123456789">
+                    </div>
+
+                    <div>
+                        <label>Precio (S/)</label>
+                        <input type="number" step="0.01" th:field="*{precio}" required>
+                    </div>
+
+                    <div>
+                        <label>Imagen URL</label>
+                        <input type="text" th:field="*{imagenUrl}" placeholder="https://...">
+                    </div>
+
+                    <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bae6fd;">
+                        <label style="color: #0369a1;">Stock Actual</label>
+                        <input type="number" th:field="*{stock}" required style="font-weight: bold;">
+                    </div>
+
+                    <div style="background: #fff1f2; padding: 15px; border-radius: 8px; border: 1px solid #fecdd3;">
+                        <label style="color: #be123c;">Stock Mínimo (Alerta)</label>
+                        <input type="number" th:field="*{stockMinimo}" required>
+                    </div>
+
+                    <div class="full-width">
+                        <label>Descripción</label>
+                        <textarea th:field="*{descripcion}" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-filled" style="flex: 1;">Guardar Producto</button>
+                    <a th:href="@{/admin/inventario}" class="btn btn-outline">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>

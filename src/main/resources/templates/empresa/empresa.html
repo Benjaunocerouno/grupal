@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Configurar Empresa | TechAdmin</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .page-wrapper { max-width: 900px; margin: 40px auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: span 2; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #334155; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .preview-logo { width: 150px; height: 150px; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f8fafc; margin-top: 10px; }
+        .preview-logo img { max-width: 100%; max-height: 100%; }
+    </style>
+</head>
+<body>
+
+        <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        
+        <div class="nav-menu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+
+                <li><a th:href="@{/admin/pos}">Ventas / POS</a></li> 
+
+                <li><a th:href="@{/admin/inventario}">Inventario</a></li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/compras}">Compras</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/proveedores}">Proveedores</a>
+                </li>
+
+                <li><a th:href="@{/admin/servicios}">Servicios</a></li>
+
+                <li><a th:href="@{/admin/usuarios}">Clientes</a></li>
+
+                <li><a th:href="@{/admin/reportes}">Reportes</a></li>
+
+                <li><a th:href="@{/admin/mantenimiento}">Mantenimiento</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <div style="text-align: right; color: white; margin-right: 10px;">
+                    <span style="font-weight: bold; display: block;" th:text="${session.usuario.nombres}">Usuario</span>
+                    <small style="color: #cbd5e1;" th:text="${session.usuario.tipoUsuario.nombreRol}">Rol</small>
+                </div>
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+    
+    <div class="page-wrapper">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #1e293b;">Identidad Corporativa</h2>
+            <a th:href="@{/admin/mantenimiento}" class="btn btn-outline">Volver al Menú</a>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 30px;">
+
+        <div th:if="${exito}" style="background:#dcfce7; color:#166534; padding:15px; margin-bottom:20px; border-radius:6px;" th:text="${exito}"></div>
+
+        <form th:action="@{/admin/mantenimiento/empresa/guardar}" method="post" th:object="${empresa}">
+            <input type="hidden" th:field="*{idempresa}">
+
+            <div class="form-grid">
+                
+                <div class="full-width">
+                    <label>Nombre Comercial de la Empresa</label>
+                    <input type="text" th:field="*{nombre}" required placeholder="Ej: TechSolutions">
+                </div>
+
+                <div>
+                    <label>URL del Logo</label>
+                    <input type="text" th:field="*{logoUrl}" id="logoInput" placeholder="https://..." oninput="updateLogoPreview()">
+                    <small style="color:#64748b;">Pega el enlace de la imagen de tu logo.</small>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <div class="preview-logo">
+                        <img id="logoPreview" th:src="*{logoUrl != null ? logoUrl : '/img/placeholder.png'}" alt="Logo Preview">
+                    </div>
+                </div>
+
+                <div><label>Dirección Física</label><input type="text" th:field="*{direccion}"></div>
+                <div><label>Email de Contacto (Público)</label><input type="email" th:field="*{emailContacto}"></div>
+                <div><label>Teléfono (Público)</label><input type="text" th:field="*{telefonoMostrar}"></div>
+                <div><label>Número WhatsApp (Sin +)</label><input type="text" th:field="*{numeroWhatsapp}"></div>
+
+                <div class="full-width">
+                    <label>Misión (Aparecerá en "Nosotros")</label>
+                    <textarea th:field="*{mision}" rows="3" placeholder="Ej: Proveer la mejor tecnología..."></textarea>
+                </div>
+                <div class="full-width">
+                    <label>Visión (Aparecerá en "Nosotros")</label>
+                    <textarea th:field="*{vision}" rows="3" placeholder="Ej: Ser líderes en el mercado..."></textarea>
+                </div>
+
+            </div>
+
+            <div style="margin-top: 30px; text-align: right;">
+                <button type="submit" class="btn btn-filled" style="padding: 12px 30px; font-size: 1rem;">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script th:src="@{/js/script.js}"></script>
+    <script>
+        function updateLogoPreview() {
+            const url = document.getElementById('logoInput').value;
+            document.getElementById('logoPreview').src = url ? url : '/img/placeholder.png';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Proveedores | TechAdmin</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="logo"><a th:href="@{/admin/dashboard}">Tech<span>Admin</span></a></div>
+        
+        <div class="nav-menu">
+            <ul class="nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+                <li><a th:href="@{/admin/pos}">Ventas / POS</a></li> 
+                <li><a th:href="@{/admin/inventario}">Inventario</a></li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/compras}">Compras</a>
+                </li>
+
+                <li th:if="${session.usuario.tipoUsuario.nombreRol == 'ADMIN' or session.usuario.tipoUsuario.nombreRol == 'ADMIN_VENDEDOR'}">
+                    <a th:href="@{/admin/proveedores}" class="active">Proveedores</a>
+                </li>
+
+                <li><a th:href="@{/admin/servicios}">Servicios</a></li>
+                <li><a th:href="@{/admin/usuarios}">Clientes</a></li>
+                <li><a th:href="@{/admin/reportes}">Reportes</a></li>
+                <li><a th:href="@{/admin/mantenimiento}">Mantenimiento</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <div style="text-align: right; color: white; margin-right: 10px;">
+                    <span style="font-weight: bold; display: block;" th:text="${session.usuario.nombres}">Usuario</span>
+                    <small style="color: #cbd5e1;" th:text="${session.usuario.tipoUsuario.nombreRol}">Rol</small>
+                </div>
+                <a th:href="@{/logout}" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+        <div class="burger" id="burgerBtn"><i class="fas fa-bars"></i></div>
+    </nav>
+
+    <div class="page-wrapper">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h2 style="margin:0; color:#1e293b;">Gestión de Proveedores</h2>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-outline" onclick="limpiarFormProveedor()" style="background: white;">
+                    <i class="fas fa-eraser"></i> Limpiar
+                </button>
+                <a th:href="@{/admin/dashboard}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        <div class="content-box">
+
+            <div th:if="${exito}" style="background:#dcfce7; color:#166534; padding:10px; margin-bottom:20px; border-radius:5px; border: 1px solid #bbf7d0;">
+                <i class="fas fa-check-circle"></i> <span th:text="${exito}"></span>
+            </div>
+            <div th:if="${error}" style="background:#fee2e2; color:#991b1b; padding:10px; margin-bottom:20px; border-radius:5px; border: 1px solid #fecaca;">
+                <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+            </div>
+
+            <div style="background: #f0fdf4; padding: 25px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 40px;">
+                <h4 style="margin-top: 0; color: #166534; margin-bottom: 15px;" id="form-title">Registrar Nuevo Proveedor</h4>
+                
+                <form th:action="@{/admin/proveedores/guardar}" method="post" th:object="${nuevoProveedor}">
+                    <input type="hidden" th:field="*{idproveedor}" id="prov_id">
+                    
+                    <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        
+                        <div>
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">RUC</label>
+                            <input type="text" th:field="*{ruc}" id="prov_ruc" class="form-control" required style="width: 100%; padding: 8px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Razón Social</label>
+                            <input type="text" th:field="*{razonSocial}" id="prov_razon" class="form-control" required style="width: 100%; padding: 8px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Teléfono</label>
+                            <input type="text" th:field="*{telefono}" id="prov_tel" class="form-control" style="width: 100%; padding: 8px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Email</label>
+                            <input type="email" th:field="*{email}" id="prov_email" class="form-control" style="width: 100%; padding: 8px;">
+                        </div>
+                        
+                        <div style="grid-column: span 2;">
+                            <label style="display:block; margin-bottom:5px; font-weight:bold;">Dirección</label>
+                            <input type="text" th:field="*{direccion}" id="prov_dir" class="form-control" style="width: 100%; padding: 8px;">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; text-align: right;">
+                        <button type="submit" class="btn btn-filled" style="background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            <i class="fas fa-save"></i> Guardar Proveedor
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <hr style="margin: 30px 0; border:0; border-top:1px solid #e2e8f0;">
+            
+            <h3 style="margin-bottom: 15px; color: #475569;">Lista de Proveedores Registrados</h3>
+            
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background-color: #f8fafc; text-align: left;">
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">RUC</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Razón Social</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Teléfono</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Email</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0; text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="prov : ${proveedores}" style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 12px;" th:text="${prov.ruc}">20000000001</td>
+                            <td style="padding: 12px; font-weight: 500;" th:text="${prov.razonSocial}">Empresa SAC</td>
+                            <td style="padding: 12px;" th:text="${prov.telefono}">-</td>
+                            <td style="padding: 12px;" th:text="${prov.email}">-</td>
+                            <td style="padding: 12px; text-align: center;">
+                                <button type="button" class="btn-action" style="background: #eff6ff; color: #2563eb; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px;"
+                                        th:onclick="editarProveedor(
+                                            [[${prov.idproveedor}]], 
+                                            [[${prov.ruc}]], 
+                                            [[${prov.razonSocial}]], 
+                                            [[${prov.telefono}]], 
+                                            [[${prov.email}]], 
+                                            [[${prov.direccion}]]
+                                        )">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </button>
+
+                                <a th:href="@{/admin/proveedores/eliminar/{id}(id=${prov.idproveedor})}" 
+                                   class="btn-action" style="background: #fef2f2; color: #dc2626; border: none; padding: 6px 10px; border-radius: 4px; display: inline-block;"
+                                   onclick="return confirm('¿Seguro que deseas eliminar este proveedor?');">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(proveedores)}">
+                            <td colspan="5" style="text-align: center; color: #64748b; padding: 30px;">
+                                <i class="fas fa-truck-loading fa-2x" style="margin-bottom: 10px; display: block; opacity: 0.5;"></i>
+                                No hay proveedores registrados.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/script.js}"></script>
+    <script>
+        function editarProveedor(id, ruc, razon, tel, email, dir) {
+            document.getElementById('prov_id').value = id;
+            document.getElementById('prov_ruc').value = ruc;
+            document.getElementById('prov_razon').value = razon;
+            document.getElementById('prov_tel').value = tel;
+            document.getElementById('prov_email').value = email;
+            document.getElementById('prov_dir').value = dir;
+
+            document.getElementById('form-title').innerText = "Editar Proveedor Existente";
+            document.getElementById('form-title').style.color = "#2563eb";
+            
+            // Scroll suave hacia el formulario
+            document.querySelector('.content-box').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function limpiarFormProveedor() {
+            document.getElementById('prov_id').value = "";
+            document.getElementById('prov_ruc').value = "";
+            document.getElementById('prov_razon').value = "";
+            document.getElementById('prov_tel').value = "";
+            document.getElementById('prov_email').value = "";
+            document.getElementById('prov_dir').value = "";
+            
+            document.getElementById('form-title').innerText = "Registrar Nuevo Proveedor";
+            document.getElementById('form-title').style.color = "#166534";
+        }
+    </script>
+</body>
+</html>

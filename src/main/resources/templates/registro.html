@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro | TechSolutions</title>
+    
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="stylesheet" th:href="@{/css/normalize.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .auth-wrapper {
+            min-height: 90vh; /* Un poco más alto para registro */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .auth-box { 
+            width: 100%;
+            max-width: 500px; /* Más ancho para que quepa bien el formulario */
+            background: white;
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            color: #333;
+        }
+
+        .auth-box h2 { margin-bottom: 25px; color: #1e293b; font-size: 1.8rem; }
+        
+        .alert-error { background:#fee2e2; color:#991b1b; padding:12px; margin-bottom:20px; border-radius:6px; text-align:center; font-size: 0.9rem; border: 1px solid #fca5a5;}
+        
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #475569; }
+        input { width:100%; padding:12px; margin-bottom: 20px; border:1px solid #cbd5e1; border-radius:6px; font-size: 1rem; transition: border 0.3s; }
+        input:focus { border-color: #2563eb; outline: none; }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">
+            <a th:href="@{/}">Tech<span>Solutions</span></a>
+        </div>
+        
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a th:href="@{/}">Inicio</a></li>
+                <li><a th:href="@{/tienda}">Tienda</a></li>
+                <li><a th:href="@{/servicio}">Servicios</a></li>
+                <li><a th:href="@{/contacto}">Contacto</a></li>
+            </ul>
+
+            <div class="auth-buttons">
+                <a th:href="@{/login}" class="btn btn-outline">Iniciar Sesión</a>
+            </div>
+        </div>
+
+        <div class="burger" id="burgerBtn">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <div class="auth-wrapper">
+        <div class="auth-box">
+            <h2 style="text-align:center">Crear Cuenta Nueva</h2>
+            
+            <div th:if="${error}" class="alert-error">
+                <i class="fas fa-times-circle"></i> <span th:text="${error}"></span>
+            </div>
+
+            <form th:action="@{/registro}" method="post">
+                <div>
+                    <label>Nombres Completos</label>
+                    <input type="text" name="nombres" required placeholder="Ej: Juan Pérez">
+                </div>
+
+                <div>
+                    <label>Nombre de Usuario</label>
+                    <input type="text" name="username" required placeholder="juanperez99">
+                </div>
+                
+                <div>
+                    <label>Correo Electrónico</label>
+                    <input type="email" name="email" required placeholder="juan@correo.com">
+                </div>
+
+                <div>
+                    <label>Teléfono / Celular</label>
+                    <input type="text" name="telefono" required placeholder="999 999 999">
+                </div>
+                
+                <div>
+                    <label>Contraseña</label>
+                    <input type="password" name="password" required placeholder="Crea una contraseña segura">
+                </div>
+
+                <div class="input-group">
+                <label>Selecciona la Tienda:</label>
+                <select name="idEmpresa" required class="form-control">
+                    <option value="" disabled selected>-- Elige una tienda --</option>
+                    <option th:each="emp : ${empresas}" 
+                            th:value="${emp.idempresa}" 
+                            th:text="${emp.nombre}">
+                    </option>
+                </select>
+            </div>
+                
+                <button type="submit" class="btn btn-filled" style="width:100%; margin-top: 10px; font-size: 1rem;">
+                    Registrarse
+                </button>
+            </form>
+            
+            <p style="text-align:center; margin-top:25px; font-size: 0.95rem; color: #64748b;">
+                ¿Ya tienes una cuenta? <br>
+                <a th:href="@{/login}" style="color: var(--primary-blue); font-weight: bold; text-decoration: none;">Inicia sesión aquí</a>
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        <div class="copyright">
+            <p>&copy; 2025 TechSolutions. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+    
+
+    <script th:src="@{/js/script.js}"></script>
+</body>
+</html>
