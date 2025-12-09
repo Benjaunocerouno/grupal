@@ -19,12 +19,49 @@ import lp.grupal.web.model.Usuario;
 import lp.grupal.web.model.dao.ICategoriaDAO;
 import lp.grupal.web.model.dao.IProductoDAO;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+import java.util.Map;
+
 @Controller
 @RequestMapping("/admin/inventario")
 public class InventarioController {
 
     @Autowired private IProductoDAO productoDAO;
     @Autowired private ICategoriaDAO categoriaDAO;
+    
+    @PostMapping("/api/guardar-rapido")
+    @ResponseBody
+    public ResponseEntity<?> guardarProductoRapido(@RequestBody Producto producto, HttpSession session) {
+        Usuario usuario = (Usuario) session.getAttribute("usuario");
+        if (usuario == null) return ResponseEntity.status(401).body("Sesión expirada");
+
+        try {
+            // Asignar empresa y valores por defecto
+            producto.setEmpresa(usuario.getEmpresa());
+            
+            if (producto.getStock() == null) producto.setStock(0); // Nace con 0, la compra lo aumentará
+            if (producto.getActivo() == null) producto.setActivo(true);
+            if (producto.getImagenUrl() == null || producto.getImagenUrl().isEmpty()) {
+                producto.setImagenUrl("/img/default-product.png");
+            }
+
+            // Guardar
+            Producto guardado = productoDAO.save(producto);
+            
+            // Retornar solo lo necesario para el Select del HTML
+            return ResponseEntity.ok(Map.of(
+                "id", guardado.getIdproducto(),
+                "nombre", guardado.getNombre(),
+                "codigo", (guardado.getCodigoBarras() != null ? guardado.getCodigoBarras() : "")
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Error al guardar: " + e.getMessage());
+        }
+    }
 
     // LISTAR PRODUCTOS (Solo de mi empresa)
     @GetMapping

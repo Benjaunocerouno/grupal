@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import jakarta.servlet.http.HttpSession;
 import lp.grupal.web.model.DetalleVenta;
 import lp.grupal.web.model.Producto;
+import lp.grupal.web.model.Servicio; // NUEVO
 import lp.grupal.web.model.TipoComprobante;
 import lp.grupal.web.model.TipoDocumento;
 import lp.grupal.web.model.TipoUsuario;
@@ -24,6 +25,7 @@ import lp.grupal.web.model.Usuario;
 import lp.grupal.web.model.Venta;
 import lp.grupal.web.model.dao.IDetalleVentaDAO;
 import lp.grupal.web.model.dao.IProductoDAO;
+import lp.grupal.web.model.dao.IServicioDAO; // NUEVO
 import lp.grupal.web.model.dao.ITipoComprobanteDAO;
 import lp.grupal.web.model.dao.ITipoDocumentoDAO;
 import lp.grupal.web.model.dao.ITipoUsuarioDAO;
@@ -35,6 +37,7 @@ import lp.grupal.web.model.dao.IVentaDAO;
 public class PosController {
 
     @Autowired private IProductoDAO productoDAO;
+    @Autowired private IServicioDAO servicioDAO; // 1. INYECCIÓN DEL DAO DE SERVICIOS
     @Autowired private IUsuarioDAO usuarioDAO;
     @Autowired private IVentaDAO ventaDAO;
     @Autowired private IDetalleVentaDAO detalleVentaDAO;
@@ -53,6 +56,10 @@ public class PosController {
 
         // Cargar listas filtradas por empresa para los selectores
         List<Producto> productos = productoDAO.findByEmpresa(idEmpresa);
+        
+        // 2. CARGAR SERVICIOS TAMBIÉN
+        List<Servicio> servicios = servicioDAO.findByEmpresa(idEmpresa); 
+        
         List<Usuario> clientes = usuarioDAO.listarClientesPorEmpresa(idEmpresa);
         List<TipoComprobante> comprobantes = tipoComprobanteDAO.findByEmpresa(idEmpresa);
         
@@ -61,6 +68,7 @@ public class PosController {
 
         // Enviar todo al HTML
         model.addAttribute("productos", productos);
+        model.addAttribute("servicios", servicios); // ENVIAR AL FRONTEND
         model.addAttribute("clientes", clientes);
         model.addAttribute("comprobantes", comprobantes);
         model.addAttribute("tiposDoc", tiposDoc);
@@ -70,6 +78,7 @@ public class PosController {
     }
 
     // --- 2. API: GUARDAR CLIENTE RÁPIDO (AJAX) ---
+    // (Este método se mantiene igual que tu versión original)
     @PostMapping("/cliente/guardar")
     @ResponseBody
     public ResponseEntity<?> guardarClienteRapido(@RequestBody Map<String, String> data, HttpSession session) {
@@ -79,40 +88,37 @@ public class PosController {
         try {
             String numDoc = data.get("numDoc");
 
-            // --- VALIDACIÓN 1: Verificar si ya existe el DNI/RUC ---
+            // Validar existencia
             Usuario existente = usuarioDAO.findByNumeroDocumento(numDoc);
             if (existente != null) {
-                return ResponseEntity.badRequest().body("{\"message\": \"El cliente con documento " + numDoc + " ya existe. Búscalo en la barra.\"}");
+                return ResponseEntity.badRequest().body("{\"message\": \"El cliente con documento " + numDoc + " ya existe.\"}");
             }
 
-            // Validar recepción de datos
+            // Validar datos mínimos
             if (data.get("idTipoDoc") == null || data.get("idTipoDoc").isEmpty()) {
                  throw new Exception("Seleccione un tipo de documento.");
             }
 
-            // Obtener Tipo Documento de la BD
             Integer idTipoDoc = Integer.parseInt(data.get("idTipoDoc"));
             TipoDocumento tipoDocBD = tipoDocumentoDAO.findById(idTipoDoc).orElse(null);
             
             if (tipoDocBD == null) throw new Exception("Tipo de documento inválido.");
 
-            // VALIDACIÓN 2: Longitud
             if (numDoc.length() < tipoDocBD.getLongitudMin() || numDoc.length() > tipoDocBD.getLongitudMax()) {
-                throw new Exception("El documento debe tener entre " + 
-                                    tipoDocBD.getLongitudMin() + " y " + tipoDocBD.getLongitudMax() + " dígitos.");
+                throw new Exception("El documento debe tener entre " + tipoDocBD.getLongitudMin() + " y " + tipoDocBD.getLongitudMax() + " dígitos.");
             }
 
-            // Crear Usuario Cliente
+            // Crear Cliente
             Usuario nuevo = new Usuario();
             nuevo.setEmpresa(vendedor.getEmpresa());
             
-            TipoUsuario rolCliente = tipoUsuarioDAO.findById(2).orElse(null); 
+            TipoUsuario rolCliente = tipoUsuarioDAO.findById(2).orElse(null); // ID 2 = CLIENTE
             nuevo.setTipoUsuario(rolCliente);
             
             nuevo.setTipoDocumento(tipoDocBD);
             nuevo.setNumeroDocumento(numDoc);
-            nuevo.setNombres(data.get("nombres")); // En persona natural va todo aquí
-            nuevo.setRazonSocial(data.get("razonSocial")); // Para empresas
+            nuevo.setNombres(data.get("nombres"));
+            nuevo.setRazonSocial(data.get("razonSocial"));
             nuevo.setDireccionFiscal(data.get("direccion"));
             nuevo.setTelefono(data.get("telefono"));
             nuevo.setEmail(data.get("email"));
@@ -125,71 +131,81 @@ public class PosController {
             return ResponseEntity.ok(guardado);
 
         } catch (Exception e) {
-            // Capturar cualquier otro error
             return ResponseEntity.badRequest().body("{\"message\": \"Error: " + e.getMessage() + "\"}");
         }
     }
 
     // --- 3. API: PROCESAR VENTA (AJAX) ---
+    // (AQUÍ ESTÁ LA LÓGICA IMPORTANTE MODIFICADA)
     @PostMapping("/procesar")
     @ResponseBody
-    @Transactional // Si falla al guardar un detalle, se revierte toda la venta
+    @Transactional
     public ResponseEntity<?> procesarVenta(@RequestBody Map<String, Object> payload, HttpSession session) {
         Usuario vendedor = (Usuario) session.getAttribute("usuario");
         if (vendedor == null) return ResponseEntity.status(401).body("Sesión expirada");
 
         try {
-            // Obtener datos del JSON enviado por el Frontend
+            // Obtener datos del JSON
             Integer idCliente = Integer.parseInt(payload.get("idCliente").toString());
             Integer idTipoComp = Integer.parseInt(payload.get("idTipoComprobante").toString());
             Double totalVenta = Double.parseDouble(payload.get("total").toString());
+            
+            // "items" ahora traerá el campo "tipo" ('PRODUCTO' o 'SERVICIO')
+            @SuppressWarnings("unchecked")
             List<Map<String, Object>> items = (List<Map<String, Object>>) payload.get("items");
 
-            // A. Gestionar Comprobante (Serie y Correlativo)
+            // A. Gestionar Comprobante
             TipoComprobante tipoComp = tipoComprobanteDAO.findById(idTipoComp)
                     .orElseThrow(() -> new Exception("Tipo de comprobante no encontrado"));
             
             int nuevoCorrelativo = tipoComp.getCorrelativoActual() + 1;
-            // Formatear a 8 dígitos (ej: 00000123)
             String numeroComprobanteGenerado = String.format("%08d", nuevoCorrelativo);
             
-            // Actualizar el correlativo en BD para la siguiente venta
             tipoComp.setCorrelativoActual(nuevoCorrelativo);
             tipoComprobanteDAO.save(tipoComp);
 
-            // B. Crear Objeto Venta
+            // B. Crear Venta
             Venta venta = new Venta();
-            venta.setUsuario(usuarioDAO.findById(idCliente).orElse(null)); // Cliente
-            venta.setEmpleado(vendedor); // Vendedor que registra
-            venta.setEmpresa(vendedor.getEmpresa()); // Empresa
+            venta.setUsuario(usuarioDAO.findById(idCliente).orElse(null));
+            venta.setEmpleado(vendedor);
+            venta.setEmpresa(vendedor.getEmpresa());
             venta.setMonto_total(totalVenta);
             venta.setEstado("COMPLETADO");
             
-            // Asignar datos del comprobante a la venta
             venta.setTipoComprobante(tipoComp);
             venta.setSerie_comprobante(tipoComp.getSerieDefault());
             venta.setNum_comprobante(numeroComprobanteGenerado);
             
-            // Guardar Cabecera de Venta
             Venta ventaGuardada = ventaDAO.save(venta);
 
-            // C. Guardar Detalles (Productos)
+            // C. Guardar Detalles (PRODUCTOS O SERVICIOS)
             for (Map<String, Object> item : items) {
-                Integer idProd = Integer.parseInt(item.get("id").toString());
+                Integer idItem = Integer.parseInt(item.get("id").toString());
                 Integer cantidad = Integer.parseInt(item.get("cantidad").toString());
                 Double precio = Double.parseDouble(item.get("precio").toString());
+                
+                // Recibimos el tipo desde el JS
+                String tipo = item.get("tipo").toString(); 
 
                 DetalleVenta detalle = new DetalleVenta();
                 detalle.setVenta(ventaGuardada);
-                detalle.setProducto(productoDAO.findById(idProd).get());
                 detalle.setCantidad(cantidad);
                 detalle.setPrecioUnitario(precio); 
                 
+                // ASIGNACIÓN CONDICIONAL
+                if ("PRODUCTO".equals(tipo)) {
+                    Producto prod = productoDAO.findById(idItem).orElse(null);
+                    detalle.setProducto(prod);
+                    // IMPORTANTE: Al setear producto, tu trigger de BD descontará stock
+                } else {
+                    Servicio serv = servicioDAO.findById(idItem).orElse(null);
+                    detalle.setServicio(serv);
+                    // Al ser servicio, no afecta stock
+                }
+                
                 detalleVentaDAO.save(detalle);
-                // El Trigger de base de datos 'trg_disminuir_stock' restará el stock automáticamente
             }
 
-            // Retornar éxito y ID para imprimir o mostrar mensaje
             return ResponseEntity.ok(Map.of("mensaje", "Venta registrada", "idVenta", ventaGuardada.getIdventa()));
 
         } catch (Exception e) {
